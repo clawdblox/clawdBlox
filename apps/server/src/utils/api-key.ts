@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const API_KEY_PREFIX = 'mw_';
 const API_KEY_LENGTH = 32;

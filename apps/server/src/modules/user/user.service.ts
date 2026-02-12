@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import crypto from 'node:crypto';
 import { userRepository } from './user.repository';
 import { projectRepository } from '../project/project.repository';
