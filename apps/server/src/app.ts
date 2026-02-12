@@ -68,7 +68,7 @@ export function createApp(): express.Express {
         error: {
           code: err.code,
           message: err.message,
-          ...(err.details && { details: err.details }),
+          ...(err.details ? { details: err.details } : {}),
         },
       });
       return;

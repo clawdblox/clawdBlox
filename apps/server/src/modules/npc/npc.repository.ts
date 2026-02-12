@@ -1,5 +1,5 @@
 import { pool } from '../../config/database';
-import type { NPC } from '@clawdblox/memoryweave-shared';
+import type { NPC, OceanPersonality } from '@clawdblox/memoryweave-shared';
 
 const JSON_FIELDS = new Set(['personality', 'speaking_style']);
 
@@ -34,7 +34,7 @@ export const npcRepository = {
 
   async create(projectId: string, data: {
     name: string;
-    personality: Record<string, number>;
+    personality: OceanPersonality;
     speaking_style: Record<string, unknown>;
     backstory: string;
     system_prompt?: string;
@@ -58,7 +58,7 @@ export const npcRepository = {
 
   async update(id: string, projectId: string, data: Partial<{
     name: string;
-    personality: Record<string, number>;
+    personality: OceanPersonality;
     speaking_style: Record<string, unknown>;
     backstory: string;
     system_prompt: string;

@@ -70,7 +70,7 @@ async function finalizeChatResponse(
   if (relationship) {
     await lifeService.incrementFamiliarity(npcId, 'player', playerId);
   } else {
-    await lifeService.createRelationship(npcId, { target_type: 'player', target_id: playerId });
+    await lifeService.createRelationship(npcId, { target_type: 'player', target_id: playerId, affinity: 0, trust: 0.5 });
   }
 
   memoryService.extractMemories(npcId, project.id, [

@@ -15,7 +15,7 @@ function signToken(
 ): string {
   return jwt.sign({ ...payload, type, jti: crypto.randomUUID() }, secret, {
     algorithm: JWT_ALGORITHM,
-    expiresIn,
+    expiresIn: expiresIn as jwt.SignOptions['expiresIn'],
     issuer: JWT_ISSUER,
   });
 }

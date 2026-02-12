@@ -32,7 +32,7 @@ const STYLE_FIELDS: Array<{ key: string; label: string; isArray?: boolean }> = [
 ];
 
 function describeSpeakingStyle(npc: NPC): string {
-  const style = npc.speaking_style as Record<string, unknown>;
+  const style = npc.speaking_style as unknown as Record<string, unknown>;
   const parts: string[] = [];
 
   for (const { key, label, isArray } of STYLE_FIELDS) {

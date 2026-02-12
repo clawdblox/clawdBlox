@@ -129,6 +129,6 @@ Respond with ONLY valid JSON (no markdown, no explanation):
       generated.personality = { ...generated.personality, ...data.traits };
     }
 
-    return this.create(projectId, generated);
+    return this.create(projectId, generated as unknown as Parameters<typeof this.create>[1]);
   },
 };
