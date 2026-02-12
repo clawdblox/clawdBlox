@@ -1,0 +1,31 @@
+{
+  "name": "memoryweave",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MemoryWeave — Persistent NPC memory engine with OCEAN personality and semantic search",
+  "license": "MIT",
+  "author": "ClawdBlox",
+  "scripts": {
+    "dev": "pnpm --filter @clawdblox/memoryweave-server dev",
+    "build": "pnpm -r build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "migrate": "pnpm --filter @clawdblox/memoryweave-server migrate",
+    "docker:dev": "docker compose -f docker/docker-compose.dev.yml up",
+    "docker:dev:build": "docker compose -f docker/docker-compose.dev.yml up --build",
+    "docker:prod": "docker compose -f docker/docker-compose.yml up -d",
+    "docker:prod:build": "docker compose -f docker/docker-compose.yml up -d --build",
+    "lint": "tsc --noEmit -p tsconfig.base.json"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0",
+    "@vitest/coverage-v8": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

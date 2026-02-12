@@ -1,0 +1,99 @@
+{
+  // MemoryWeave — OpenClaw Configuration
+  // Docs: https://docs.openclaw.ai
+
+  "identity": {
+    "name": "MemoryWeave",
+    "emoji": "🧠",
+    "theme": "NPC management assistant"
+  },
+
+  "agent": {
+    "workspace": "/root/.openclaw/workspace",
+    "model": {
+      "primary": "anthropic/claude-sonnet-4-5"
+    }
+  },
+
+  // === Channels ===
+  "channels": {
+    "discord": {
+      "enabled": true,
+      // Set DISCORD_BOT_TOKEN in env or uncomment:
+      // "token": "${DISCORD_BOT_TOKEN}",
+
+      "groupPolicy": "allowlist",
+
+      "dm": {
+        "enabled": true,
+        "policy": "allowlist",
+        "allowFrom": []  // Add Discord user IDs of authorized devs
+      },
+
+      "guilds": {
+        // === Example guild configuration ===
+        // Replace GUILD_ID with your Discord server ID
+        //
+        // "GUILD_ID": {
+        //   "slug": "my-game-server",
+        //   "requireMention": false,
+        //
+        //   "channels": {
+        //     // --- Admin channel: game dev talks to MemoryWeave assistant ---
+        //     "mw-admin": {
+        //       "allow": true,
+        //       "requireMention": false,
+        //       "skills": ["memoryweave-admin"],
+        //       "systemPrompt": "You are the MemoryWeave admin assistant. Help the game developer manage their NPCs and channel bindings."
+        //     },
+        //
+        //     // --- NPC channels: dynamic binding via the API ---
+        //     // No need to hardcode NPC IDs here. The NPC skill resolves
+        //     // the bound NPC dynamically via: mw resolve-channel discord <channel_id>
+        //     // Use the admin assistant to bind NPCs: mw bind-channel <npc_id> discord <channel_id>
+        //     //
+        //     // "tavern-keeper": {
+        //     //   "allow": true,
+        //     //   "requireMention": false,
+        //     //   "skills": ["memoryweave-npc"],
+        //     //   "systemPrompt": "You are a message relay. For every message, use the memoryweave-npc skill to resolve the NPC and return ONLY the NPC response."
+        //     // }
+        //   }
+        // }
+      }
+    },
+
+    "telegram": {
+      "enabled": true,
+      // Set TELEGRAM_BOT_TOKEN in env or uncomment:
+      // "botToken": "${TELEGRAM_BOT_TOKEN}",
+
+      "dmPolicy": "allowlist",
+      "allowFrom": []  // Add Telegram user IDs of authorized devs
+    }
+  },
+
+  // === Sessions ===
+  "session": {
+    "dmScope": "per-channel-peer",
+    "reset": {
+      "mode": "daily",
+      "atHour": 4
+    }
+  },
+
+  // === Tools ===
+  "tools": {
+    "allow": ["exec", "read"],
+    "exec": {
+      "timeoutSec": 30
+    }
+  },
+
+  // === Environment ===
+  "env": {
+    "MEMORYWEAVE_API_KEY": "${MEMORYWEAVE_API_KEY}",
+    "MEMORYWEAVE_BASE_URL": "${MEMORYWEAVE_BASE_URL}",
+    "PATH": "/root/.openclaw/workspace/scripts:${PATH}"
+  }
+}

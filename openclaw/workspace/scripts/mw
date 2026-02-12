@@ -1,0 +1,186 @@
+#!/bin/sh
+# MemoryWeave CLI wrapper for OpenClaw
+# Usage: mw <command> [args...]
+
+BASE_URL="${MEMORYWEAVE_BASE_URL:-http://localhost:3000}"
+API_KEY="${MEMORYWEAVE_API_KEY}"
+
+if [ -z "$API_KEY" ]; then
+  echo "Error: MEMORYWEAVE_API_KEY is not set" >&2
+  exit 1
+fi
+
+request() {
+  method="$1"
+  path="$2"
+  body="$3"
+
+  if [ -n "$body" ]; then
+    curl -sf -X "$method" \
+      -H "x-api-key: $API_KEY" \
+      -H "Content-Type: application/json" \
+      -d "$body" \
+      "${BASE_URL}/api/v1${path}"
+  else
+    curl -sf -X "$method" \
+      -H "x-api-key: $API_KEY" \
+      "${BASE_URL}/api/v1${path}"
+  fi
+}
+
+case "$1" in
+  # === NPCs ===
+  list-npcs)
+    page="${2:-1}"
+    limit="${3:-20}"
+    request GET "/npcs?page=${page}&limit=${limit}"
+    ;;
+  get-npc)
+    [ -z "$2" ] && echo "Usage: mw get-npc <npc_id>" >&2 && exit 1
+    request GET "/npcs/$2"
+    ;;
+  create-npc)
+    [ -z "$2" ] && echo "Usage: mw create-npc '<json_body>'" >&2 && exit 1
+    request POST "/npcs" "$2"
+    ;;
+  generate-npc)
+    [ -z "$2" ] && echo "Usage: mw generate-npc '<json_body>'" >&2 && exit 1
+    request POST "/npcs/generate" "$2"
+    ;;
+  update-npc)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw update-npc <npc_id> '<json_body>'" >&2 && exit 1
+    request PUT "/npcs/$2" "$3"
+    ;;
+  delete-npc)
+    [ -z "$2" ] && echo "Usage: mw delete-npc <npc_id>" >&2 && exit 1
+    request DELETE "/npcs/$2"
+    ;;
+
+  # === Conversations ===
+  list-conversations)
+    [ -z "$2" ] && echo "Usage: mw list-conversations <npc_id> [page] [limit]" >&2 && exit 1
+    page="${3:-1}"
+    limit="${4:-20}"
+    request GET "/npcs/$2/conversations?page=${page}&limit=${limit}"
+    ;;
+  get-messages)
+    [ -z "$2" ] && echo "Usage: mw get-messages <conversation_id> [limit]" >&2 && exit 1
+    limit="${3:-50}"
+    request GET "/conversations/$2/messages?limit=${limit}"
+    ;;
+  chat-bot)
+    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ] && \
+      echo "Usage: mw chat-bot <npc_id> <platform> <platform_user_id> <message>" >&2 && exit 1
+    request POST "/npcs/$2/chat/bot" "{\"platform\":\"$3\",\"platform_user_id\":\"$4\",\"message\":\"$5\"}"
+    ;;
+
+  # === Memories ===
+  list-memories)
+    [ -z "$2" ] && echo "Usage: mw list-memories <npc_id> [page] [limit]" >&2 && exit 1
+    page="${3:-1}"
+    limit="${4:-20}"
+    request GET "/npcs/$2/memories?page=${page}&limit=${limit}"
+    ;;
+  search-memories)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw search-memories <npc_id> '<json_body>'" >&2 && exit 1
+    request POST "/npcs/$2/memories/search" "$3"
+    ;;
+  create-memory)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-memory <npc_id> '<json_body>'" >&2 && exit 1
+    request POST "/npcs/$2/memories" "$3"
+    ;;
+
+  # === Life (Routines, Goals, Relationships) ===
+  list-routines)
+    [ -z "$2" ] && echo "Usage: mw list-routines <npc_id>" >&2 && exit 1
+    request GET "/npcs/$2/routines"
+    ;;
+  create-routine)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-routine <npc_id> '<json_body>'" >&2 && exit 1
+    request POST "/npcs/$2/routines" "$3"
+    ;;
+  list-goals)
+    [ -z "$2" ] && echo "Usage: mw list-goals <npc_id>" >&2 && exit 1
+    request GET "/npcs/$2/goals"
+    ;;
+  create-goal)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-goal <npc_id> '<json_body>'" >&2 && exit 1
+    request POST "/npcs/$2/goals" "$3"
+    ;;
+  list-relationships)
+    [ -z "$2" ] && echo "Usage: mw list-relationships <npc_id>" >&2 && exit 1
+    request GET "/npcs/$2/relationships"
+    ;;
+  create-relationship)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-relationship <npc_id> '<json_body>'" >&2 && exit 1
+    request POST "/npcs/$2/relationships" "$3"
+    ;;
+
+  # === Channel Bindings ===
+  bind-channel)
+    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] && echo "Usage: mw bind-channel <npc_id> <platform> <channel_id>" >&2 && exit 1
+    request POST "/channels/bind" "{\"npc_id\":\"$2\",\"platform\":\"$3\",\"channel_id\":\"$4\"}"
+    ;;
+  unbind-channel)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw unbind-channel <platform> <channel_id>" >&2 && exit 1
+    request DELETE "/channels/bind" "{\"platform\":\"$2\",\"channel_id\":\"$3\"}"
+    ;;
+  list-bindings)
+    request GET "/channels/bindings"
+    ;;
+  resolve-channel)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw resolve-channel <platform> <channel_id>" >&2 && exit 1
+    request GET "/channels/resolve?platform=$2&channel_id=$3"
+    ;;
+
+  # === Stats ===
+  stats)
+    request GET "/stats"
+    ;;
+
+  # === Health ===
+  health)
+    curl -sf "${BASE_URL}/health"
+    ;;
+
+  *)
+    echo "MemoryWeave CLI — Available commands:"
+    echo ""
+    echo "  NPCs:"
+    echo "    list-npcs [page] [limit]"
+    echo "    get-npc <npc_id>"
+    echo "    create-npc '<json>'"
+    echo "    generate-npc '<json>'"
+    echo "    update-npc <npc_id> '<json>'"
+    echo "    delete-npc <npc_id>"
+    echo ""
+    echo "  Conversations:"
+    echo "    list-conversations <npc_id> [page] [limit]"
+    echo "    get-messages <conversation_id> [limit]"
+    echo "    chat-bot <npc_id> <platform> <platform_user_id> <message>"
+    echo ""
+    echo "  Memories:"
+    echo "    list-memories <npc_id> [page] [limit]"
+    echo "    search-memories <npc_id> '<json>'"
+    echo "    create-memory <npc_id> '<json>'"
+    echo ""
+    echo "  Life:"
+    echo "    list-routines <npc_id>"
+    echo "    create-routine <npc_id> '<json>'"
+    echo "    list-goals <npc_id>"
+    echo "    create-goal <npc_id> '<json>'"
+    echo "    list-relationships <npc_id>"
+    echo "    create-relationship <npc_id> '<json>'"
+    echo ""
+    echo "  Channel Bindings:"
+    echo "    bind-channel <npc_id> <platform> <channel_id>"
+    echo "    unbind-channel <platform> <channel_id>"
+    echo "    list-bindings"
+    echo "    resolve-channel <platform> <channel_id>"
+    echo ""
+    echo "  Project:"
+    echo "    stats"
+    echo "    health"
+    exit 1
+    ;;
+esac
