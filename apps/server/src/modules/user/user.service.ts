@@ -31,9 +31,9 @@ export const userService = {
     display_name: string;
     project_name: string;
   }): Promise<{ user: UserPublic; apiKey: string; tokens: TokenPair }> {
-    const count = await userRepository.count();
-    if (count > 0) {
-      throw new ConflictError('Setup already completed. Use login instead.');
+    const existing = await userRepository.findByEmail(data.email);
+    if (existing) {
+      throw new ConflictError('An account with this email already exists. Use login instead.');
     }
 
     const { key, prefix } = generateApiKey();
