@@ -69,6 +69,8 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
       GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_CHAT_MODEL: ${GROQ_CHAT_MODEL:-llama-3.3-70b-versatile}
+      GROQ_EMBED_MODEL: ${GROQ_EMBED_MODEL:-}
       CORS_ORIGIN: ${CORS_ORIGIN:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     depends_on:
