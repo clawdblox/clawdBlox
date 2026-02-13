@@ -18,6 +18,9 @@ function getCorsOrigin(): cors.CorsOptions['origin'] {
   if (env.NODE_ENV === 'production' && env.CORS_ORIGIN === '*') {
     return false;
   }
+  if (env.CORS_ORIGIN.includes(',')) {
+    return env.CORS_ORIGIN.split(',').map((o) => o.trim());
+  }
   return env.CORS_ORIGIN;
 }
 
