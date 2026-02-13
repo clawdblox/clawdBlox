@@ -3,11 +3,18 @@ import { memoryService } from './memory.service';
 import { apiKeyMiddleware } from '../../middleware/apiKey.middleware';
 import { apiRateLimit } from '../../middleware/rateLimit.middleware';
 import { createMemorySchema, updateMemorySchema, searchMemorySchema, paginationQuery } from '@clawdblox/memoryweave-shared';
-import { ValidationError } from '../../utils/errors';
+import { ValidationError, NotFoundError } from '../../utils/errors';
+import { npcRepository } from '../npc/npc.repository';
 
 export const memoryController = Router();
 
-memoryController.use('/npcs/:npcId/memories', apiKeyMiddleware, apiRateLimit);
+memoryController.use('/npcs/:npcId/memories', apiKeyMiddleware, apiRateLimit, async (req, _res, next) => {
+  try {
+    const npc = await npcRepository.findById(req.params.npcId, req.projectId!);
+    if (!npc) throw new NotFoundError('NPC', req.params.npcId);
+    next();
+  } catch (err) { next(err); }
+});
 
 memoryController.get('/npcs/:npcId/memories', async (req, res, next) => {
   try {

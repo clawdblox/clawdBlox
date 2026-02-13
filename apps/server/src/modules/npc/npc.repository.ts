@@ -27,11 +27,6 @@ export const npcRepository = {
     return result.rows[0] || null;
   },
 
-  async findByIdAnyProject(id: string): Promise<NPC | null> {
-    const result = await pool.query('SELECT * FROM npcs WHERE id = $1', [id]);
-    return result.rows[0] || null;
-  },
-
   async create(projectId: string, data: {
     name: string;
     personality: OceanPersonality;

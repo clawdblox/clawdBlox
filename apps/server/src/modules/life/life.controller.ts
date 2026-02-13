@@ -3,11 +3,18 @@ import { lifeService } from './life.service';
 import { apiKeyMiddleware } from '../../middleware/apiKey.middleware';
 import { apiRateLimit } from '../../middleware/rateLimit.middleware';
 import { createRoutineSchema, updateRoutineSchema, createGoalSchema, updateGoalSchema, createRelationshipSchema, updateRelationshipSchema } from '@clawdblox/memoryweave-shared';
-import { ValidationError } from '../../utils/errors';
+import { ValidationError, NotFoundError } from '../../utils/errors';
+import { npcRepository } from '../npc/npc.repository';
 
 export const lifeController = Router();
 
-lifeController.use('/npcs/:npcId', apiKeyMiddleware, apiRateLimit);
+lifeController.use('/npcs/:npcId', apiKeyMiddleware, apiRateLimit, async (req, _res, next) => {
+  try {
+    const npc = await npcRepository.findById(req.params.npcId, req.projectId!);
+    if (!npc) throw new NotFoundError('NPC', req.params.npcId);
+    next();
+  } catch (err) { next(err); }
+});
 
 lifeController.get('/npcs/:npcId/routines', async (req, res, next) => {
   try {

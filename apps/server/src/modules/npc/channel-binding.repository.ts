@@ -46,11 +46,4 @@ export const channelBindingRepository = {
     return result.rows;
   },
 
-  async findByNpcId(npcId: string): Promise<ChannelBinding[]> {
-    const result = await pool.query(
-      'SELECT * FROM channel_bindings WHERE npc_id = $1 ORDER BY created_at DESC',
-      [npcId],
-    );
-    return result.rows;
-  },
 };
