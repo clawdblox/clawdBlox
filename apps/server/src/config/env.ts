@@ -23,9 +23,12 @@ const envSchema = z.object({
   // Encryption
   ENCRYPTION_KEY: z.string().min(32),
 
-  // Groq
+  // Groq (chat)
   GROQ_API_KEY: z.string().optional(),
   GROQ_CHAT_MODEL: z.string().default('llama-3.1-70b-versatile'),
+
+  // OpenAI (embeddings)
+  OPENAI_API_KEY: z.string().optional(),
   GROQ_EMBED_MODEL: z.string().default('text-embedding-3-small'),
 
   // Player auth

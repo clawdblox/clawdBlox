@@ -1,4 +1,5 @@
 import Groq from 'groq-sdk';
+import OpenAI from 'openai';
 import type { AIProvider, ChatMessage, ChatOptions, EmbedOptions } from '@clawdblox/memoryweave-shared';
 
 const API_TIMEOUT_MS = 30_000;
@@ -6,11 +7,13 @@ const API_TIMEOUT_MS = 30_000;
 export class GroqProvider implements AIProvider {
   readonly name = 'groq';
   private readonly client: Groq;
+  private readonly embedClient: OpenAI;
   private readonly chatModel: string;
   private readonly embedModel: string;
 
-  constructor(apiKey: string, chatModel: string, embedModel: string) {
+  constructor(apiKey: string, chatModel: string, embedModel: string, openaiApiKey: string) {
     this.client = new Groq({ apiKey, timeout: API_TIMEOUT_MS });
+    this.embedClient = new OpenAI({ apiKey: openaiApiKey, timeout: API_TIMEOUT_MS });
     this.chatModel = chatModel;
     this.embedModel = embedModel;
   }
@@ -35,14 +38,14 @@ export class GroqProvider implements AIProvider {
 
   async embed(text: string, options?: EmbedOptions): Promise<number[]> {
     try {
-      const response = await (this.client as any).embeddings.create({
+      const response = await this.embedClient.embeddings.create({
         model: options?.model || this.embedModel,
         input: text,
       });
 
       const embedding = response.data?.[0]?.embedding;
       if (!Array.isArray(embedding) || embedding.length === 0) {
-        throw new Error('Empty embedding response from Groq');
+        throw new Error('Empty embedding response from OpenAI');
       }
 
       return embedding;

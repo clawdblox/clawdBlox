@@ -19,9 +19,14 @@ export class AIProviderFactory {
       throw new ValidationError('No AI API key configured. Set GROQ_API_KEY or configure BYOK.');
     }
 
+    const openaiKey = env.OPENAI_API_KEY;
+    if (!openaiKey) {
+      throw new ValidationError('No OpenAI API key configured. Set OPENAI_API_KEY for embeddings.');
+    }
+
     const chatModel = project.settings?.groq_chat_model || env.GROQ_CHAT_MODEL;
     const embedModel = project.settings?.groq_embed_model || env.GROQ_EMBED_MODEL;
 
-    return new GroqProvider(apiKey, chatModel, embedModel);
+    return new GroqProvider(apiKey, chatModel, embedModel, openaiKey);
   }
 }
