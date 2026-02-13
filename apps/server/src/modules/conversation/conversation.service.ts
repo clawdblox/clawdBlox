@@ -30,7 +30,8 @@ async function prepareChatContext(
   const conversation = await conversationRepository.create(npcId, playerId);
   const [history, memories, lifeContext, relationship] = await Promise.all([
     conversationRepository.getMessages(conversation.id, 20),
-    memoryService.search(npcId, project.id, { query: message, limit: 5, min_vividness: 0.1 }),
+    memoryService.search(npcId, project.id, { query: message, limit: 5, min_vividness: 0.1 })
+      .catch(err => { console.warn('Memory search unavailable, continuing without memories:', err.message); return [] as Awaited<ReturnType<typeof memoryService.search>>; }),
     lifeService.getContextForConversation(npcId),
     lifeService.getRelationship(npcId, 'player', playerId),
   ]);
