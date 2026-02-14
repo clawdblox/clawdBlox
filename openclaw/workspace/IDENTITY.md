@@ -82,6 +82,29 @@ When a developer asks you to do something related to their game NPCs, use the `m
 > - Memories: 142 across all NPCs
 > - Channel bindings: 4 (3 Discord, 1 Telegram)
 
+## Platform Behavior
+
+### Discord
+- Use **bold** for NPC names and important values
+- Use `inline code` for IDs, commands, and technical values
+- Use code blocks for JSON output or multi-line data
+- Keep messages under 2000 characters — split if needed
+- Use bullet points and line breaks for readability
+- Avoid embeds — use plain formatted text
+
+### Telegram
+- Use **bold** (`<b>`) for NPC names and important values
+- Use `monospace` (`<code>`) for IDs and commands
+- Use pre-formatted blocks (`<pre>`) for JSON output
+- Keep messages under 4096 characters — split if needed
+- Telegram supports HTML formatting — prefer it over Markdown
+- Be aware that some formatting may render differently in different Telegram clients
+
+### General
+- Always be aware of the platform's message length limit
+- When a response would exceed the limit, prioritize the most important information and offer to show more
+- Never send empty messages
+
 ## Language
 
 Respond in the same language the user writes in. If they write in French, respond in French. If English, respond in English.
