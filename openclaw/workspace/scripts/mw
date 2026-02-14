@@ -29,6 +29,9 @@ if [ -z "$API_KEY" ]; then
   exit $EXIT_USAGE
 fi
 
+tmpfile=$(mktemp)
+trap 'rm -f "$tmpfile"' EXIT
+
 debug() {
   [ "${MW_DEBUG:-0}" = "1" ] && echo "[DEBUG] $*" >&2
 }
@@ -39,6 +42,39 @@ format_json() {
   else
     cat
   fi
+}
+
+json_escape_string() {
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$1" | jq -Rs '.' | sed 's/^"//;s/"$//'
+  else
+    printf '%s' "$1" | sed -e 's/\\/\\\\/g' \
+      -e 's/"/\\"/g' \
+      -e 's/	/\\t/g' \
+      -e 's/\x08/\\b/g' \
+      -e 's/\x0c/\\f/g' \
+      -e 's/\r/\\r/g' | awk '{
+      if (NR > 1) printf "\\n"
+      printf "%s", $0
+    }'
+  fi
+}
+
+urlencode() {
+  printf '%s' "$1" | awk '
+    BEGIN {
+      for (i = 0; i < 256; i++) ord[sprintf("%c", i)] = i
+    }
+    {
+      n = split($0, chars, "")
+      for (i = 1; i <= n; i++) {
+        c = chars[i]
+        if (c ~ /[A-Za-z0-9._~-]/)
+          printf "%s", c
+        else
+          printf "%%%02X", ord[c]
+      }
+    }'
 }
 
 is_retryable() {
@@ -52,11 +88,18 @@ request() {
   method="$1"
   path="$2"
   body="$3"
+  raw="${4:-}"
   max_attempts=3
   attempt=1
   delay=1
 
-  debug "$method ${BASE_URL}/api/v1${path}"
+  if [ "$raw" = "raw" ]; then
+    url="${BASE_URL}${path}"
+  else
+    url="${BASE_URL}/api/v1${path}"
+  fi
+
+  debug "$method $url"
   [ -n "$body" ] && debug "Body: $body"
 
   if [ -n "$body" ] && command -v jq >/dev/null 2>&1; then
@@ -66,23 +109,19 @@ request() {
     fi
   fi
 
-  tmpfile=$(mktemp)
-  trap 'rm -f "$tmpfile"' EXIT
-
-  while [ $attempt -le $max_attempts ]; do
+  while [ "$attempt" -le "$max_attempts" ]; do
     http_code=$(curl -s -X "$method" \
       --max-time "${MW_TIMEOUT:-30}" --connect-timeout 10 \
       -H "x-api-key: $API_KEY" \
       ${body:+-H "Content-Type: application/json" -d "$body"} \
       -o "$tmpfile" -w '%{http_code}' \
-      "${BASE_URL}/api/v1${path}" 2>&1)
+      "$url" 2>&1)
     status=$?
 
-    if [ $status -ne 0 ]; then
+    if [ "$status" -ne 0 ]; then
       debug "Curl exit code: $status"
-      if ! is_retryable $status || [ $attempt -eq $max_attempts ]; then
+      if ! is_retryable "$status" || [ "$attempt" -eq "$max_attempts" ]; then
         printf "${RED}Error: request failed (exit code $status)${RESET}\n" >&2
-        rm -f "$tmpfile"
         return $EXIT_NETWORK
       fi
       echo "Retrying in ${delay}s (attempt $attempt/$max_attempts)..." >&2
@@ -94,20 +133,23 @@ request() {
 
     debug "HTTP $http_code"
 
-    if [ "$http_code" -ge 400 ] 2>/dev/null; then
+    case "$http_code" in
+      [0-9][0-9][0-9]) ;;
+      *) printf "${RED}Error: unexpected response${RESET}\n" >&2; return $EXIT_NETWORK ;;
+    esac
+
+    if [ "$http_code" -ge 400 ]; then
       err_msg=$(cat "$tmpfile")
       if command -v jq >/dev/null 2>&1; then
         parsed=$(printf '%s' "$err_msg" | jq -r '.error // .message // empty' 2>/dev/null)
         [ -n "$parsed" ] && err_msg="$parsed"
       fi
       printf "${RED}Error: HTTP $http_code — $err_msg${RESET}\n" >&2
-      rm -f "$tmpfile"
       return $EXIT_API
     fi
 
     debug "Response (status: ok)"
     format_json < "$tmpfile"
-    rm -f "$tmpfile"
     return $EXIT_OK
   done
 }
@@ -193,10 +235,10 @@ case "$1" in
 
   # === NPCs ===
   list-npcs)
-    page="${2:-1}"
-    limit="${3:-20}"
-    sort_by="${4:-created_at}"
-    sort_order="${5:-desc}"
+    page=$(urlencode "${2:-1}")
+    limit=$(urlencode "${3:-20}")
+    sort_by=$(urlencode "${4:-created_at}")
+    sort_order=$(urlencode "${5:-desc}")
     request GET "/npcs?page=${page}&limit=${limit}&sort_by=${sort_by}&sort_order=${sort_order}"
     ;;
   get-npc)
@@ -224,13 +266,13 @@ case "$1" in
   # === Conversations ===
   list-conversations)
     require_arg "$2" "mw list-conversations <npc_id> [page] [limit]"
-    page="${3:-1}"
-    limit="${4:-20}"
+    page=$(urlencode "${3:-1}")
+    limit=$(urlencode "${4:-20}")
     request GET "/npcs/$2/conversations?page=${page}&limit=${limit}"
     ;;
   get-messages)
     require_arg "$2" "mw get-messages <conversation_id> [limit]"
-    limit="${3:-50}"
+    limit=$(urlencode "${3:-50}")
     request GET "/conversations/$2/messages?limit=${limit}"
     ;;
   export-conversation)
@@ -242,15 +284,15 @@ case "$1" in
     require_arg "$3" "mw chat-bot <npc_id> <platform> <platform_user_id> <message>"
     require_arg "$4" "mw chat-bot <npc_id> <platform> <platform_user_id> <message>"
     require_arg "$5" "mw chat-bot <npc_id> <platform> <platform_user_id> <message>"
-    escaped_msg=$(printf '%s' "$5" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/	/\\t/g' | tr '\n' ' ' | sed 's/\r//g')
+    escaped_msg=$(json_escape_string "$5")
     request POST "/npcs/$2/chat/bot" "{\"platform\":\"$3\",\"platform_user_id\":\"$4\",\"message\":\"$escaped_msg\"}"
     ;;
 
   # === Memories ===
   list-memories)
     require_arg "$2" "mw list-memories <npc_id> [page] [limit]"
-    page="${3:-1}"
-    limit="${4:-20}"
+    page=$(urlencode "${3:-1}")
+    limit=$(urlencode "${4:-20}")
     request GET "/npcs/$2/memories?page=${page}&limit=${limit}"
     ;;
   search-memories)
@@ -375,7 +417,9 @@ case "$1" in
   resolve-channel)
     require_arg "$2" "mw resolve-channel <platform> <channel_id>"
     require_arg "$3" "mw resolve-channel <platform> <channel_id>"
-    request GET "/channels/resolve?platform=$2&platform_channel_id=$3"
+    platform=$(urlencode "$2")
+    channel_id=$(urlencode "$3")
+    request GET "/channels/resolve?platform=${platform}&platform_channel_id=${channel_id}"
     ;;
 
   # === Project ===
@@ -383,7 +427,7 @@ case "$1" in
     request GET "/stats"
     ;;
   health)
-    curl -sf "${BASE_URL}/health"
+    request GET "/health" "" "raw"
     ;;
 
   *)
