@@ -28,12 +28,14 @@ request() {
   while [ $attempt -le $max_attempts ]; do
     if [ -n "$body" ]; then
       result=$(curl -sf -X "$method" \
+        --max-time "${MW_TIMEOUT:-30}" --connect-timeout 10 \
         -H "x-api-key: $API_KEY" \
         -H "Content-Type: application/json" \
         -d "$body" \
         "${BASE_URL}/api/v1${path}" 2>&1)
     else
       result=$(curl -sf -X "$method" \
+        --max-time "${MW_TIMEOUT:-30}" --connect-timeout 10 \
         -H "x-api-key: $API_KEY" \
         "${BASE_URL}/api/v1${path}" 2>&1)
     fi
