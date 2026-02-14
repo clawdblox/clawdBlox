@@ -12,8 +12,20 @@ BASE_URL="${MEMORYWEAVE_BASE_URL:-http://localhost:3000}"
 API_KEY="${MEMORYWEAVE_API_KEY}"
 
 if [ -z "$API_KEY" ]; then
-  echo "Error: MEMORYWEAVE_API_KEY is not set" >&2
+  printf "${RED}Error: MEMORYWEAVE_API_KEY is not set${RESET}\n" >&2
   exit $EXIT_USAGE
+fi
+
+if [ -t 1 ] && [ "${MW_NO_COLOR:-0}" != "1" ]; then
+  RED='\033[0;31m'
+  GREEN='\033[0;32m'
+  BOLD='\033[1m'
+  RESET='\033[0m'
+else
+  RED=''
+  GREEN=''
+  BOLD=''
+  RESET=''
 fi
 
 debug() {
@@ -48,7 +60,7 @@ request() {
 
   if [ -n "$body" ] && command -v jq >/dev/null 2>&1; then
     if ! printf '%s' "$body" | jq . >/dev/null 2>&1; then
-      echo "Error: invalid JSON body" >&2
+      printf "${RED}Error: invalid JSON body${RESET}\n" >&2
       return $EXIT_USAGE
     fi
   fi
@@ -77,7 +89,7 @@ request() {
     if [ $status -ne 0 ]; then
       debug "Curl exit code: $status"
       if ! is_retryable $status || [ $attempt -eq $max_attempts ]; then
-        echo "Error: request failed (exit code $status)" >&2
+        printf "${RED}Error: request failed (exit code $status)${RESET}\n" >&2
         rm -f "$tmpfile"
         return $EXIT_NETWORK
       fi
@@ -96,7 +108,7 @@ request() {
         parsed=$(printf '%s' "$err_msg" | jq -r '.error // .message // empty' 2>/dev/null)
         [ -n "$parsed" ] && err_msg="$parsed"
       fi
-      echo "Error: HTTP $http_code — $err_msg" >&2
+      printf "${RED}Error: HTTP $http_code — $err_msg${RESET}\n" >&2
       rm -f "$tmpfile"
       return $EXIT_API
     fi
@@ -115,7 +127,7 @@ case "$1" in
     ;;
 
   --help|-h)
-    echo "mw $MW_VERSION — MemoryWeave CLI"
+    printf "${BOLD}mw $MW_VERSION — MemoryWeave CLI${RESET}\n"
     echo ""
     echo "Usage: mw <command> [args...]"
     echo ""
@@ -280,7 +292,7 @@ case "$1" in
     ;;
 
   *)
-    echo "Unknown command: $1. Run 'mw --help' for usage." >&2
+    printf "${RED}Unknown command: $1. Run 'mw --help' for usage.${RESET}\n" >&2
     exit $EXIT_USAGE
     ;;
 esac
