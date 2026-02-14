@@ -25,17 +25,18 @@ The NPC linked to each channel is resolved dynamically via the MemoryWeave API. 
    ```
 3. If no NPC is bound (error or empty response), reply with: "No NPC is linked to this channel. An admin can bind one using the admin assistant."
 4. Extract the `npc_id` from the JSON response
-5. Extract the sender's platform user ID from the incoming message context
-6. Call the MemoryWeave bot chat endpoint:
+5. Check the `is_active` field in the response. If `is_active` is `false`, reply with: "This NPC is currently unavailable." and stop processing.
+6. Extract the sender's platform user ID from the incoming message context
+7. Call the MemoryWeave bot chat endpoint:
    ```
    exec mw chat-bot <npc_id> <platform> <sender_user_id> "<message>"
    ```
-7. Parse the JSON response and extract the `message` field
-8. Check the response length against the platform limit:
+8. Parse the JSON response and extract the `message` field
+9. Check the response length against the platform limit:
    - Discord: 2000 characters
    - Telegram: 4096 characters
    - If the message exceeds the limit, truncate it and append "..." to indicate the response was cut short
-9. Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes
+10. Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes
 
 ## Critical Rules
 
