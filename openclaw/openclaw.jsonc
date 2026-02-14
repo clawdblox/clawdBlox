@@ -106,6 +106,13 @@
     }
   },
 
+  // === Logging ===
+  "logging": {
+    "level": "info",           // error | warn | info | debug
+    "destination": "stdout",   // stdout | file
+    "includeTimestamps": true
+  },
+
   // === Tools ===
   "tools": {
     "allow": ["exec", "read"],
