@@ -33,32 +33,42 @@
       },
 
       "guilds": {
-        // === Example guild configuration ===
-        // Replace GUILD_ID with your Discord server ID
+        // === Template Guild Configuration ===
+        // Copy this block, replace YOUR_GUILD_ID with your Discord server ID,
+        // and uncomment to activate.
         //
-        // "GUILD_ID": {
+        // "YOUR_GUILD_ID": {
         //   "slug": "my-game-server",
         //   "requireMention": false,
         //
         //   "channels": {
-        //     // --- Admin channel: game dev talks to MemoryWeave assistant ---
+        //     // --- Admin channel ---
+        //     // Create a private channel for managing NPCs.
+        //     // Only authorized devs should have access to this channel.
         //     "mw-admin": {
         //       "allow": true,
         //       "requireMention": false,
         //       "skills": ["memoryweave-admin"],
-        //       "systemPrompt": "You are the MemoryWeave admin assistant. Help the game developer manage their NPCs and channel bindings."
+        //       "systemPrompt": "You are the MemoryWeave admin assistant. Help the game developer manage their NPCs, memories, routines, goals, relationships, and channel bindings."
         //     },
         //
-        //     // --- NPC channels: dynamic binding via the API ---
-        //     // No need to hardcode NPC IDs here. The NPC skill resolves
-        //     // the bound NPC dynamically via: mw resolve-channel discord <channel_id>
-        //     // Use the admin assistant to bind NPCs: mw bind-channel <npc_id> discord <channel_id>
-        //     //
-        //     // "tavern-keeper": {
+        //     // --- NPC channel example ---
+        //     // Create one channel per NPC character.
+        //     // Bind NPCs to channels via: mw bind-channel <npc_id> discord <channel_id>
+        //     // The NPC skill resolves the binding automatically at runtime.
+        //     "tavern": {
+        //       "allow": true,
+        //       "requireMention": false,
+        //       "skills": ["memoryweave-npc"],
+        //       "systemPrompt": "You are a transparent message relay. For every user message, use the memoryweave-npc skill to resolve the bound NPC and return ONLY the NPC's response. Do not add commentary."
+        //     },
+        //
+        //     // --- Add more NPC channels as needed ---
+        //     // "blacksmith": {
         //     //   "allow": true,
         //     //   "requireMention": false,
         //     //   "skills": ["memoryweave-npc"],
-        //     //   "systemPrompt": "You are a message relay. For every message, use the memoryweave-npc skill to resolve the NPC and return ONLY the NPC response."
+        //     //   "systemPrompt": "You are a transparent message relay. For every user message, use the memoryweave-npc skill to resolve the bound NPC and return ONLY the NPC's response. Do not add commentary."
         //     // }
         //   }
         // }
