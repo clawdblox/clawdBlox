@@ -35,7 +35,11 @@ The NPC linked to each channel is resolved dynamically via the MemoryWeave API. 
 9. Check the response length against the platform limit:
    - Discord: 2000 characters
    - Telegram: 4096 characters
-   - If the message exceeds the limit, truncate it and append "..." to indicate the response was cut short
+   - If the message exceeds the limit, split the response into multiple messages:
+     - Split at sentence boundaries (`. ` or `\n\n`) to maintain readability
+     - Each chunk must be within the platform's character limit
+     - Send each chunk as a separate message with a short delay between them
+     - Only as a last resort (no suitable split point found), truncate and append "..."
 10. Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes
 
 ## Critical Rules
