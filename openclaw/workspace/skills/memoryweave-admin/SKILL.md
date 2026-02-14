@@ -156,6 +156,30 @@ exec mw update-relationship <npc_id> <relationship_id> '{"trust":0.8,"familiarit
 exec mw delete-relationship <npc_id> <relationship_id>
 ```
 
+### Bulk Operations
+
+When the user wants to perform operations on multiple entities at once:
+
+**Bulk create memories:**
+Loop through a list of memories and create each one:
+```
+exec mw create-memory <npc_id> '{"content":"Memory 1","type":"episodic","importance":"moderate"}'
+exec mw create-memory <npc_id> '{"content":"Memory 2","type":"semantic","importance":"significant"}'
+```
+
+**Bulk delete:**
+Always ask for confirmation before bulk deletions. List what will be deleted first:
+1. List the entities to be deleted and show them to the user
+2. Ask: "Are you sure you want to delete these X items? This cannot be undone."
+3. Only proceed after explicit user confirmation
+4. Delete one at a time and report progress
+
+**Pattern for iterating over entities:**
+1. First list all entities: `exec mw list-memories <npc_id> 1 100`
+2. Parse the response to extract IDs
+3. Perform the operation on each one sequentially
+4. Report the total count of successful/failed operations
+
 ### Project Stats
 
 **Get project-wide statistics:**
