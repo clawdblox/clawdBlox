@@ -163,31 +163,7 @@ exec mw update-relationship <npc_id> <relationship_id> '{"trust":0.8,"familiarit
 exec mw delete-relationship <npc_id> <relationship_id>
 ```
 
-### Bulk Operations
-
-When the user wants to perform operations on multiple entities at once:
-
-**Bulk create memories:**
-Loop through a list of memories and create each one:
-```
-exec mw create-memory <npc_id> '{"content":"Memory 1","type":"episodic","importance":"moderate"}'
-exec mw create-memory <npc_id> '{"content":"Memory 2","type":"semantic","importance":"significant"}'
-```
-
-**Bulk delete:**
-Always ask for confirmation before bulk deletions. List what will be deleted first:
-1. List the entities to be deleted and show them to the user
-2. Ask: "Are you sure you want to delete these X items? This cannot be undone."
-3. Only proceed after explicit user confirmation
-4. Delete one at a time and report progress
-
-**Pattern for iterating over entities:**
-1. First list all entities: `exec mw list-memories <npc_id> 1 100`
-2. Parse the response to extract IDs
-3. Perform the operation on each one sequentially
-4. Report the total count of successful/failed operations
-
-### Project Stats
+### Project
 
 **Get project-wide statistics:**
 ```
@@ -199,48 +175,18 @@ exec mw stats
 exec mw health
 ```
 
-## Response Formatting
+## Bulk Operations
 
-When presenting results to the user:
-- For NPC lists: show name, mood, and a brief personality summary
-- For conversations: show player ID, status, message count, last activity
-- For memories: show content, type, importance, and vividness
-- For stats: present as a clean summary with counts and averages
-- Always use the NPC name (not just the UUID) when referring to NPCs
+When the user wants to perform operations on multiple entities:
 
-### Response Formatting Examples
+1. List the entities first: `exec mw list-memories <npc_id> 1 100`
+2. Parse the response to extract IDs
+3. Perform the operation on each one sequentially
+4. Report the total count of successful/failed operations
 
-**NPC Detail View:**
-```
-**Elena** (id: `a1b2c3d4-...`)
-Status: active | Mood: curious
-Personality (OCEAN): O:0.8 C:0.6 E:0.4 A:0.7 N:0.3
-Speaking style: warm, educated, uses metaphors
-Backstory: Elena grew up in a small coastal village...
-Memories: 12 | Routines: 3 | Goals: 2 | Relationships: 5
-```
+For bulk deletions, always ask for confirmation first. List what will be deleted and ask: "Are you sure you want to delete these X items? This cannot be undone." Only proceed after explicit user confirmation.
 
-**Memory Search Results:**
-```
-Found 3 memories matching "battle":
-
-1. [episodic, significant] "Led the charge at the Battle of Dawn" (2 days ago)
-2. [emotional, critical] "Lost her mentor during the siege" (5 days ago)
-3. [semantic, moderate] "Knows tactical formations from training" (1 week ago)
-```
-
-**Stats Dashboard:**
-```
-📊 Project Overview
-─────────────────
-NPCs:           5 (3 active, 2 idle)
-Conversations:  23 total, 8 active
-Memories:       142 across all NPCs
-Bindings:       4 channels (3 Discord, 1 Telegram)
-API calls:      1,204 this week
-```
-
-### Onboarding Workflow
+## Onboarding Workflow
 
 Step-by-step guide for setting up a new NPC from scratch:
 
@@ -281,19 +227,56 @@ Step-by-step guide for setting up a new NPC from scratch:
 
 **Recommended order matters:** Create the NPC first, add memories and personality before binding to a channel. This ensures the NPC has enough context to respond meaningfully from the first interaction.
 
-### Troubleshooting
+## Response Formatting
 
-Common errors and how to handle them:
+When presenting results to the user:
+- For NPC lists: show name, mood, and a brief personality summary
+- For conversations: show player ID, status, message count, last activity
+- For memories: show content, type, importance, and vividness
+- For stats: present as a clean summary with counts and averages
+- Always use the NPC name (not just the UUID) when referring to NPCs
+
+**NPC Detail View:**
+```
+**Elena** (id: `a1b2c3d4-...`)
+Status: active | Mood: curious
+Personality (OCEAN): O:0.8 C:0.6 E:0.4 A:0.7 N:0.3
+Speaking style: warm, educated, uses metaphors
+Backstory: Elena grew up in a small coastal village...
+Memories: 12 | Routines: 3 | Goals: 2 | Relationships: 5
+```
+
+**Memory Search Results:**
+```
+Found 3 memories matching "battle":
+
+1. [episodic, significant] "Led the charge at the Battle of Dawn" (2 days ago)
+2. [emotional, critical] "Lost her mentor during the siege" (5 days ago)
+3. [semantic, moderate] "Knows tactical formations from training" (1 week ago)
+```
+
+**Stats Dashboard:**
+```
+Project Overview
+─────────────────
+NPCs:           5 (3 active, 2 idle)
+Conversations:  23 total, 8 active
+Memories:       142 across all NPCs
+Bindings:       4 channels (3 Discord, 1 Telegram)
+API calls:      1,204 this week
+```
+
+## Troubleshooting
 
 | HTTP Code | Meaning | Likely Cause | Fix |
 |-----------|---------|--------------|-----|
 | 401 | Unauthorized | Invalid or expired API key | Check that `MEMORYWEAVE_API_KEY` is set correctly and the key is active |
 | 404 | Not Found | Wrong UUID or deleted entity | Verify the ID exists — use the corresponding `list-*` command first |
 | 422 | Validation Error | Invalid input data | Check required fields and value ranges (e.g., OCEAN values must be 0-1, importance must be a valid level) |
-| 429 | Rate Limited | Too many requests in a short period | Wait a moment and retry. Reduce request frequency for bulk operations |
-| 500 | Server Error | Internal server issue | This is not a client-side issue. Retry after a short wait. If persistent, check server logs |
+| 429 | Rate Limited | Too many requests | Wait a moment and retry. Reduce request frequency for bulk operations |
+| 500 | Server Error | Internal server issue | Retry after a short wait. If persistent, check server logs |
 
-**Tips for debugging:**
+**Debugging tips:**
 - Use `MW_DEBUG=1` to see full request/response details
 - Use `mw health` to verify the API is reachable
 - Invalid JSON will be caught before sending if `jq` is available

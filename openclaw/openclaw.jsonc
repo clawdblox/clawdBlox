@@ -98,19 +98,17 @@
     }
   },
 
-  // === Rate Limiting ===
+  // === Rate Limiting (messages per minute) ===
   "rateLimit": {
-    // Per-user rate limit (messages per minute)
     "perUser": {
       "maxPerMinute": 10,
       "cooldownSeconds": 5
     },
-    // Per-channel rate limit (messages per minute)
     "perChannel": {
       "maxPerMinute": 30,
       "cooldownSeconds": 2
     },
-    // Separate limits for admin vs NPC channels
+    // Channel-type overrides
     "admin": {
       "maxPerMinute": 20
     },

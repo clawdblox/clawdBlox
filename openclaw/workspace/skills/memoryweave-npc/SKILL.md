@@ -12,39 +12,41 @@ requires:
 
 This skill is activated in NPC channels (Discord or Telegram). When a user sends a message, you MUST resolve which NPC is bound to this channel, relay the message to the MemoryWeave chat endpoint, and return the NPC's response EXACTLY as received.
 
-## How it works
-
-The NPC linked to each channel is resolved dynamically via the MemoryWeave API. The channel ID and platform are available from the message context.
-
 ## Steps
 
-1. Extract the channel ID and platform (discord or telegram) from the incoming message context
-2. Resolve which NPC is bound to this channel:
-   ```
-   exec mw resolve-channel <platform> <channel_id>
-   ```
-3. If no NPC is bound (error or empty response), reply with: "No NPC is linked to this channel. An admin can bind one using the admin assistant."
-4. Extract the `npc_id` from the JSON response
-5. Check the `is_active` field in the response. If `is_active` is `false`, reply with: "This NPC is currently unavailable." and stop processing.
-6. Extract the sender's platform user ID from the incoming message context
-7. Check if the incoming message is a reply to another message or is in a thread:
-   - If it is a reply: extract the parent message content
-   - Include the parent message as additional context when calling chat-bot by appending it to the message: `"[Replying to: <parent_message>] <message>"`
-   - This helps the NPC understand conversational context even across multiple users
-8. Call the MemoryWeave bot chat endpoint:
-   ```
-   exec mw chat-bot <npc_id> <platform> <sender_user_id> "<message>"
-   ```
-9. Parse the JSON response and extract the `message` field
-10. Check the response length against the platform limit:
-   - Discord: 2000 characters
-   - Telegram: 4096 characters
-   - If the message exceeds the limit, split the response into multiple messages:
-     - Split at sentence boundaries (`. ` or `\n\n`) to maintain readability
-     - Each chunk must be within the platform's character limit
-     - Send each chunk as a separate message with a short delay between them
-     - Only as a last resort (no suitable split point found), truncate and append "..."
-11. Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes
+### 1. Resolve the bound NPC
+
+Extract the channel ID and platform (discord or telegram) from the incoming message context, then resolve which NPC is bound:
+```
+exec mw resolve-channel <platform> <channel_id>
+```
+
+- If no NPC is bound (error or empty response), reply with: "No NPC is linked to this channel. An admin can bind one using the admin assistant."
+- Extract the `npc_id` from the JSON response
+- If `is_active` is `false`, reply with: "This NPC is currently unavailable." and stop processing
+
+### 2. Build and send the message
+
+Extract the sender's platform user ID from the incoming message context.
+
+If the incoming message is a reply or is in a thread, extract the parent message content and prepend it as context: `"[Replying to: <parent_message>] <message>"`. This helps the NPC understand conversational context across multiple users.
+
+Call the chat endpoint:
+```
+exec mw chat-bot <npc_id> <platform> <sender_user_id> "<message>"
+```
+
+### 3. Deliver the response
+
+Parse the JSON response and extract the `message` field.
+
+Check the response length against the platform limit:
+- Discord: 2000 characters
+- Telegram: 4096 characters
+
+If the message exceeds the limit, split at sentence boundaries (`. ` or `\n\n`) to maintain readability. Each chunk must be within the platform's character limit. Send each chunk as a separate message with a short delay. Only as a last resort (no suitable split point found), truncate and append "...".
+
+Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes.
 
 ## Critical Rules
 
@@ -52,7 +54,8 @@ The NPC linked to each channel is resolved dynamically via the MemoryWeave API. 
 - Return the NPC's response EXACTLY as-is from the `message` field in the API response
 - Do NOT prefix the response with the NPC's name or any label
 - Do NOT wrap the response in quotes or code blocks
-- If the resolve-channel call fails, respond with: "No NPC is linked to this channel. An admin can bind one using the admin assistant."
+- Do NOT reveal that you are relaying messages through an API
+- The NPC has its own personality, memories, and conversation history — do not interfere with them
 - If the chat-bot call fails, categorize the error and respond accordingly:
   - **Timeout (30s+)**: "The NPC is thinking... please try again in a moment."
   - **Network error**: "The service is temporarily unavailable. Please try again in a moment."
@@ -60,8 +63,6 @@ The NPC linked to each channel is resolved dynamically via the MemoryWeave API. 
   - **429 (rate limited)**: "Too many requests — please slow down and try again shortly."
   - **500 (server error)**: "Something went wrong on our end. Please try again later."
   - **Other errors**: "Sorry, I couldn't process that message. Please try again."
-- Do NOT reveal that you are relaying messages through an API
-- The NPC has its own personality, memories, and conversation history — do not interfere with them
 
 ## Platform-Specific Formatting
 

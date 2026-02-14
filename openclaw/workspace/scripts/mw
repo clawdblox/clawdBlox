@@ -8,14 +8,7 @@ EXIT_USAGE=1
 EXIT_NETWORK=2
 EXIT_API=3
 
-BASE_URL="${MEMORYWEAVE_BASE_URL:-http://localhost:3000}"
-API_KEY="${MEMORYWEAVE_API_KEY}"
-
-if [ -z "$API_KEY" ]; then
-  printf "${RED}Error: MEMORYWEAVE_API_KEY is not set${RESET}\n" >&2
-  exit $EXIT_USAGE
-fi
-
+# Color setup (must be defined before any output)
 if [ -t 1 ] && [ "${MW_NO_COLOR:-0}" != "1" ]; then
   RED='\033[0;31m'
   GREEN='\033[0;32m'
@@ -26,6 +19,14 @@ else
   GREEN=''
   BOLD=''
   RESET=''
+fi
+
+BASE_URL="${MEMORYWEAVE_BASE_URL:-http://localhost:3000}"
+API_KEY="${MEMORYWEAVE_API_KEY}"
+
+if [ -z "$API_KEY" ]; then
+  printf "${RED}Error: MEMORYWEAVE_API_KEY is not set${RESET}\n" >&2
+  exit $EXIT_USAGE
 fi
 
 debug() {
@@ -69,21 +70,12 @@ request() {
   trap 'rm -f "$tmpfile"' EXIT
 
   while [ $attempt -le $max_attempts ]; do
-    if [ -n "$body" ]; then
-      http_code=$(curl -s -X "$method" \
-        --max-time "${MW_TIMEOUT:-30}" --connect-timeout 10 \
-        -H "x-api-key: $API_KEY" \
-        -H "Content-Type: application/json" \
-        -d "$body" \
-        -o "$tmpfile" -w '%{http_code}' \
-        "${BASE_URL}/api/v1${path}" 2>&1)
-    else
-      http_code=$(curl -s -X "$method" \
-        --max-time "${MW_TIMEOUT:-30}" --connect-timeout 10 \
-        -H "x-api-key: $API_KEY" \
-        -o "$tmpfile" -w '%{http_code}' \
-        "${BASE_URL}/api/v1${path}" 2>&1)
-    fi
+    http_code=$(curl -s -X "$method" \
+      --max-time "${MW_TIMEOUT:-30}" --connect-timeout 10 \
+      -H "x-api-key: $API_KEY" \
+      ${body:+-H "Content-Type: application/json" -d "$body"} \
+      -o "$tmpfile" -w '%{http_code}' \
+      "${BASE_URL}/api/v1${path}" 2>&1)
     status=$?
 
     if [ $status -ne 0 ]; then
@@ -114,10 +106,18 @@ request() {
     fi
 
     debug "Response (status: ok)"
-    cat "$tmpfile" | format_json
+    format_json < "$tmpfile"
     rm -f "$tmpfile"
     return $EXIT_OK
   done
+}
+
+# Require a non-empty argument; print usage and exit if missing
+require_arg() {
+  if [ -z "$1" ]; then
+    echo "Usage: $2" >&2
+    exit $EXIT_USAGE
+  fi
 }
 
 case "$1" in
@@ -187,6 +187,7 @@ case "$1" in
     echo "  MW_TIMEOUT            Request timeout in seconds (default: 30)"
     echo "  MW_DEBUG=1            Enable verbose output"
     echo "  MW_RAW=1              Disable JSON pretty-printing"
+    echo "  MW_NO_COLOR=1         Disable colored output"
     exit $EXIT_OK
     ;;
 
@@ -199,162 +200,188 @@ case "$1" in
     request GET "/npcs?page=${page}&limit=${limit}&sort_by=${sort_by}&sort_order=${sort_order}"
     ;;
   get-npc)
-    [ -z "$2" ] && echo "Usage: mw get-npc <npc_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw get-npc <npc_id>"
     request GET "/npcs/$2"
     ;;
   create-npc)
-    [ -z "$2" ] && echo "Usage: mw create-npc '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw create-npc '<json_body>'"
     request POST "/npcs" "$2"
     ;;
   generate-npc)
-    [ -z "$2" ] && echo "Usage: mw generate-npc '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw generate-npc '<json_body>'"
     request POST "/npcs/generate" "$2"
     ;;
   update-npc)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw update-npc <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw update-npc <npc_id> '<json_body>'"
+    require_arg "$3" "mw update-npc <npc_id> '<json_body>'"
     request PUT "/npcs/$2" "$3"
     ;;
   delete-npc)
-    [ -z "$2" ] && echo "Usage: mw delete-npc <npc_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw delete-npc <npc_id>"
     request DELETE "/npcs/$2"
     ;;
 
   # === Conversations ===
   list-conversations)
-    [ -z "$2" ] && echo "Usage: mw list-conversations <npc_id> [page] [limit]" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw list-conversations <npc_id> [page] [limit]"
     page="${3:-1}"
     limit="${4:-20}"
     request GET "/npcs/$2/conversations?page=${page}&limit=${limit}"
     ;;
   get-messages)
-    [ -z "$2" ] && echo "Usage: mw get-messages <conversation_id> [limit]" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw get-messages <conversation_id> [limit]"
     limit="${3:-50}"
     request GET "/conversations/$2/messages?limit=${limit}"
     ;;
   export-conversation)
-    [ -z "$2" ] && echo "Usage: mw export-conversation <conversation_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw export-conversation <conversation_id>"
     request GET "/conversations/$2/messages?limit=1000"
     ;;
   chat-bot)
-    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ] && \
-      echo "Usage: mw chat-bot <npc_id> <platform> <platform_user_id> <message>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw chat-bot <npc_id> <platform> <platform_user_id> <message>"
+    require_arg "$3" "mw chat-bot <npc_id> <platform> <platform_user_id> <message>"
+    require_arg "$4" "mw chat-bot <npc_id> <platform> <platform_user_id> <message>"
+    require_arg "$5" "mw chat-bot <npc_id> <platform> <platform_user_id> <message>"
     escaped_msg=$(printf '%s' "$5" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/	/\\t/g' | tr '\n' ' ' | sed 's/\r//g')
     request POST "/npcs/$2/chat/bot" "{\"platform\":\"$3\",\"platform_user_id\":\"$4\",\"message\":\"$escaped_msg\"}"
     ;;
 
   # === Memories ===
   list-memories)
-    [ -z "$2" ] && echo "Usage: mw list-memories <npc_id> [page] [limit]" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw list-memories <npc_id> [page] [limit]"
     page="${3:-1}"
     limit="${4:-20}"
     request GET "/npcs/$2/memories?page=${page}&limit=${limit}"
     ;;
   search-memories)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw search-memories <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw search-memories <npc_id> '<json_body>'"
+    require_arg "$3" "mw search-memories <npc_id> '<json_body>'"
     request POST "/npcs/$2/memories/search" "$3"
     ;;
   create-memory)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-memory <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw create-memory <npc_id> '<json_body>'"
+    require_arg "$3" "mw create-memory <npc_id> '<json_body>'"
     request POST "/npcs/$2/memories" "$3"
     ;;
   get-memory)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw get-memory <npc_id> <memory_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw get-memory <npc_id> <memory_id>"
+    require_arg "$3" "mw get-memory <npc_id> <memory_id>"
     request GET "/npcs/$2/memories/$3"
     ;;
   update-memory)
-    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] && echo "Usage: mw update-memory <npc_id> <memory_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw update-memory <npc_id> <memory_id> '<json_body>'"
+    require_arg "$3" "mw update-memory <npc_id> <memory_id> '<json_body>'"
+    require_arg "$4" "mw update-memory <npc_id> <memory_id> '<json_body>'"
     request PUT "/npcs/$2/memories/$3" "$4"
     ;;
   delete-memory)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw delete-memory <npc_id> <memory_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw delete-memory <npc_id> <memory_id>"
+    require_arg "$3" "mw delete-memory <npc_id> <memory_id>"
     request DELETE "/npcs/$2/memories/$3"
     ;;
 
   # === Life (Routines, Goals, Relationships) ===
   list-routines)
-    [ -z "$2" ] && echo "Usage: mw list-routines <npc_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw list-routines <npc_id>"
     request GET "/npcs/$2/routines"
     ;;
   create-routine)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-routine <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw create-routine <npc_id> '<json_body>'"
+    require_arg "$3" "mw create-routine <npc_id> '<json_body>'"
     request POST "/npcs/$2/routines" "$3"
     ;;
   get-routine)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw get-routine <npc_id> <routine_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw get-routine <npc_id> <routine_id>"
+    require_arg "$3" "mw get-routine <npc_id> <routine_id>"
     request GET "/npcs/$2/routines/$3"
     ;;
   update-routine)
-    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] && echo "Usage: mw update-routine <npc_id> <routine_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw update-routine <npc_id> <routine_id> '<json_body>'"
+    require_arg "$3" "mw update-routine <npc_id> <routine_id> '<json_body>'"
+    require_arg "$4" "mw update-routine <npc_id> <routine_id> '<json_body>'"
     request PUT "/npcs/$2/routines/$3" "$4"
     ;;
   delete-routine)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw delete-routine <npc_id> <routine_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw delete-routine <npc_id> <routine_id>"
+    require_arg "$3" "mw delete-routine <npc_id> <routine_id>"
     request DELETE "/npcs/$2/routines/$3"
     ;;
   list-goals)
-    [ -z "$2" ] && echo "Usage: mw list-goals <npc_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw list-goals <npc_id>"
     request GET "/npcs/$2/goals"
     ;;
   create-goal)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-goal <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw create-goal <npc_id> '<json_body>'"
+    require_arg "$3" "mw create-goal <npc_id> '<json_body>'"
     request POST "/npcs/$2/goals" "$3"
     ;;
   get-goal)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw get-goal <npc_id> <goal_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw get-goal <npc_id> <goal_id>"
+    require_arg "$3" "mw get-goal <npc_id> <goal_id>"
     request GET "/npcs/$2/goals/$3"
     ;;
   update-goal)
-    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] && echo "Usage: mw update-goal <npc_id> <goal_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw update-goal <npc_id> <goal_id> '<json_body>'"
+    require_arg "$3" "mw update-goal <npc_id> <goal_id> '<json_body>'"
+    require_arg "$4" "mw update-goal <npc_id> <goal_id> '<json_body>'"
     request PUT "/npcs/$2/goals/$3" "$4"
     ;;
   delete-goal)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw delete-goal <npc_id> <goal_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw delete-goal <npc_id> <goal_id>"
+    require_arg "$3" "mw delete-goal <npc_id> <goal_id>"
     request DELETE "/npcs/$2/goals/$3"
     ;;
   list-relationships)
-    [ -z "$2" ] && echo "Usage: mw list-relationships <npc_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw list-relationships <npc_id>"
     request GET "/npcs/$2/relationships"
     ;;
   create-relationship)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-relationship <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw create-relationship <npc_id> '<json_body>'"
+    require_arg "$3" "mw create-relationship <npc_id> '<json_body>'"
     request POST "/npcs/$2/relationships" "$3"
     ;;
   get-relationship)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw get-relationship <npc_id> <relationship_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw get-relationship <npc_id> <relationship_id>"
+    require_arg "$3" "mw get-relationship <npc_id> <relationship_id>"
     request GET "/npcs/$2/relationships/$3"
     ;;
   update-relationship)
-    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] && echo "Usage: mw update-relationship <npc_id> <relationship_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw update-relationship <npc_id> <relationship_id> '<json_body>'"
+    require_arg "$3" "mw update-relationship <npc_id> <relationship_id> '<json_body>'"
+    require_arg "$4" "mw update-relationship <npc_id> <relationship_id> '<json_body>'"
     request PUT "/npcs/$2/relationships/$3" "$4"
     ;;
   delete-relationship)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw delete-relationship <npc_id> <relationship_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw delete-relationship <npc_id> <relationship_id>"
+    require_arg "$3" "mw delete-relationship <npc_id> <relationship_id>"
     request DELETE "/npcs/$2/relationships/$3"
     ;;
 
   # === Channel Bindings ===
   bind-channel)
-    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] && echo "Usage: mw bind-channel <npc_id> <platform> <channel_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw bind-channel <npc_id> <platform> <channel_id>"
+    require_arg "$3" "mw bind-channel <npc_id> <platform> <channel_id>"
+    require_arg "$4" "mw bind-channel <npc_id> <platform> <channel_id>"
     request POST "/channels/bind" "{\"npc_id\":\"$2\",\"platform\":\"$3\",\"platform_channel_id\":\"$4\"}"
     ;;
   unbind-channel)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw unbind-channel <platform> <channel_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw unbind-channel <platform> <channel_id>"
+    require_arg "$3" "mw unbind-channel <platform> <channel_id>"
     request DELETE "/channels/bind" "{\"platform\":\"$2\",\"platform_channel_id\":\"$3\"}"
     ;;
   list-bindings)
     request GET "/channels/bindings"
     ;;
   resolve-channel)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw resolve-channel <platform> <channel_id>" >&2 && exit $EXIT_USAGE
+    require_arg "$2" "mw resolve-channel <platform> <channel_id>"
+    require_arg "$3" "mw resolve-channel <platform> <channel_id>"
     request GET "/channels/resolve?platform=$2&platform_channel_id=$3"
     ;;
 
-  # === Stats ===
+  # === Project ===
   stats)
     request GET "/stats"
     ;;
-
-  # === Health ===
   health)
     curl -sf "${BASE_URL}/health"
     ;;
