@@ -27,12 +27,16 @@ The NPC linked to each channel is resolved dynamically via the MemoryWeave API. 
 4. Extract the `npc_id` from the JSON response
 5. Check the `is_active` field in the response. If `is_active` is `false`, reply with: "This NPC is currently unavailable." and stop processing.
 6. Extract the sender's platform user ID from the incoming message context
-7. Call the MemoryWeave bot chat endpoint:
+7. Check if the incoming message is a reply to another message or is in a thread:
+   - If it is a reply: extract the parent message content
+   - Include the parent message as additional context when calling chat-bot by appending it to the message: `"[Replying to: <parent_message>] <message>"`
+   - This helps the NPC understand conversational context even across multiple users
+8. Call the MemoryWeave bot chat endpoint:
    ```
    exec mw chat-bot <npc_id> <platform> <sender_user_id> "<message>"
    ```
-8. Parse the JSON response and extract the `message` field
-9. Check the response length against the platform limit:
+9. Parse the JSON response and extract the `message` field
+10. Check the response length against the platform limit:
    - Discord: 2000 characters
    - Telegram: 4096 characters
    - If the message exceeds the limit, split the response into multiple messages:
@@ -40,7 +44,7 @@ The NPC linked to each channel is resolved dynamically via the MemoryWeave API. 
      - Each chunk must be within the platform's character limit
      - Send each chunk as a separate message with a short delay between them
      - Only as a last resort (no suitable split point found), truncate and append "..."
-10. Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes
+11. Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes
 
 ## Critical Rules
 
