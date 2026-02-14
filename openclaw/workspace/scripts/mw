@@ -215,6 +215,10 @@ case "$1" in
     limit="${3:-50}"
     request GET "/conversations/$2/messages?limit=${limit}"
     ;;
+  export-conversation)
+    [ -z "$2" ] && echo "Usage: mw export-conversation <conversation_id>" >&2 && exit $EXIT_USAGE
+    request GET "/conversations/$2/messages?limit=1000"
+    ;;
   chat-bot)
     [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ] && \
       echo "Usage: mw chat-bot <npc_id> <platform> <platform_user_id> <message>" >&2 && exit $EXIT_USAGE
