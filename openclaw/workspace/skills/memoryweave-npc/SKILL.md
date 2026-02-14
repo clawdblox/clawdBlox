@@ -31,7 +31,11 @@ The NPC linked to each channel is resolved dynamically via the MemoryWeave API. 
    exec mw chat-bot <npc_id> <platform> <sender_user_id> "<message>"
    ```
 7. Parse the JSON response and extract the `message` field
-8. Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes
+8. Check the response length against the platform limit:
+   - Discord: 2000 characters
+   - Telegram: 4096 characters
+   - If the message exceeds the limit, truncate it and append "..." to indicate the response was cut short
+9. Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes
 
 ## Critical Rules
 
