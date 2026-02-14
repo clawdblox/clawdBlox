@@ -54,7 +54,8 @@ The NPC linked to each channel is resolved dynamically via the MemoryWeave API. 
 - Do NOT wrap the response in quotes or code blocks
 - If the resolve-channel call fails, respond with: "No NPC is linked to this channel. An admin can bind one using the admin assistant."
 - If the chat-bot call fails, categorize the error and respond accordingly:
-  - **Network error / timeout**: "The service is temporarily unavailable. Please try again in a moment."
+  - **Timeout (30s+)**: "The NPC is thinking... please try again in a moment."
+  - **Network error**: "The service is temporarily unavailable. Please try again in a moment."
   - **404 (NPC not found)**: "This NPC could not be found. It may have been deleted."
   - **429 (rate limited)**: "Too many requests — please slow down and try again shortly."
   - **500 (server error)**: "Something went wrong on our end. Please try again later."
