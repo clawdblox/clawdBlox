@@ -130,7 +130,7 @@ case "$1" in
     ;;
   resolve-channel)
     [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw resolve-channel <platform> <channel_id>" >&2 && exit 1
-    request GET "/channels/resolve?platform=$2&channel_id=$3"
+    request GET "/channels/resolve?platform=$2&platform_channel_id=$3"
     ;;
 
   # === Stats ===
