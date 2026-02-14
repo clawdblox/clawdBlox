@@ -16,6 +16,14 @@ debug() {
   [ "${MW_DEBUG:-0}" = "1" ] && echo "[DEBUG] $*" >&2
 }
 
+format_json() {
+  if [ "${MW_RAW:-0}" != "1" ] && command -v jq >/dev/null 2>&1; then
+    jq .
+  else
+    cat
+  fi
+}
+
 is_retryable() {
   case "$1" in
     6|7|28|56) return 0 ;;
@@ -52,7 +60,7 @@ request() {
 
     if [ $status -eq 0 ]; then
       debug "Response (status: ok)"
-      printf '%s' "$result"
+      printf '%s' "$result" | format_json
       return 0
     fi
     debug "Curl exit code: $status"
