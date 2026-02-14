@@ -112,6 +112,21 @@ exec mw search-memories <npc_id> '{"query":"the battle at dawn","limit":10}'
 exec mw create-memory <npc_id> '{"content":"Saw a dragon fly over the village at sunset","type":"episodic","importance":"significant"}'
 ```
 
+**Get a specific memory:**
+```
+exec mw get-memory <npc_id> <memory_id>
+```
+
+**Update a memory:**
+```
+exec mw update-memory <npc_id> <memory_id> '{"importance":"critical","content":"Updated memory content..."}'
+```
+
+**Delete a memory:**
+```
+exec mw delete-memory <npc_id> <memory_id>
+```
+
 ### Life System (Routines, Goals, Relationships)
 
 **Routines:**
