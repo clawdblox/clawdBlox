@@ -3,13 +3,17 @@
 # Usage: mw <command> [args...]
 
 MW_VERSION="0.1.0"
+EXIT_OK=0
+EXIT_USAGE=1
+EXIT_NETWORK=2
+EXIT_API=3
 
 BASE_URL="${MEMORYWEAVE_BASE_URL:-http://localhost:3000}"
 API_KEY="${MEMORYWEAVE_API_KEY}"
 
 if [ -z "$API_KEY" ]; then
   echo "Error: MEMORYWEAVE_API_KEY is not set" >&2
-  exit 1
+  exit $EXIT_USAGE
 fi
 
 debug() {
@@ -45,7 +49,7 @@ request() {
   if [ -n "$body" ] && command -v jq >/dev/null 2>&1; then
     if ! printf '%s' "$body" | jq . >/dev/null 2>&1; then
       echo "Error: invalid JSON body" >&2
-      return 1
+      return $EXIT_USAGE
     fi
   fi
 
@@ -74,7 +78,7 @@ request() {
 
     if ! is_retryable $status || [ $attempt -eq $max_attempts ]; then
       echo "Error: request failed (exit code $status)" >&2
-      return $status
+      return $EXIT_NETWORK
     fi
 
     echo "Retrying in ${delay}s (attempt $attempt/$max_attempts)..." >&2
@@ -97,101 +101,101 @@ case "$1" in
     request GET "/npcs?page=${page}&limit=${limit}"
     ;;
   get-npc)
-    [ -z "$2" ] && echo "Usage: mw get-npc <npc_id>" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw get-npc <npc_id>" >&2 && exit $EXIT_USAGE
     request GET "/npcs/$2"
     ;;
   create-npc)
-    [ -z "$2" ] && echo "Usage: mw create-npc '<json_body>'" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw create-npc '<json_body>'" >&2 && exit $EXIT_USAGE
     request POST "/npcs" "$2"
     ;;
   generate-npc)
-    [ -z "$2" ] && echo "Usage: mw generate-npc '<json_body>'" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw generate-npc '<json_body>'" >&2 && exit $EXIT_USAGE
     request POST "/npcs/generate" "$2"
     ;;
   update-npc)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw update-npc <npc_id> '<json_body>'" >&2 && exit 1
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw update-npc <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
     request PUT "/npcs/$2" "$3"
     ;;
   delete-npc)
-    [ -z "$2" ] && echo "Usage: mw delete-npc <npc_id>" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw delete-npc <npc_id>" >&2 && exit $EXIT_USAGE
     request DELETE "/npcs/$2"
     ;;
 
   # === Conversations ===
   list-conversations)
-    [ -z "$2" ] && echo "Usage: mw list-conversations <npc_id> [page] [limit]" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw list-conversations <npc_id> [page] [limit]" >&2 && exit $EXIT_USAGE
     page="${3:-1}"
     limit="${4:-20}"
     request GET "/npcs/$2/conversations?page=${page}&limit=${limit}"
     ;;
   get-messages)
-    [ -z "$2" ] && echo "Usage: mw get-messages <conversation_id> [limit]" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw get-messages <conversation_id> [limit]" >&2 && exit $EXIT_USAGE
     limit="${3:-50}"
     request GET "/conversations/$2/messages?limit=${limit}"
     ;;
   chat-bot)
     [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] || [ -z "$5" ] && \
-      echo "Usage: mw chat-bot <npc_id> <platform> <platform_user_id> <message>" >&2 && exit 1
+      echo "Usage: mw chat-bot <npc_id> <platform> <platform_user_id> <message>" >&2 && exit $EXIT_USAGE
     escaped_msg=$(printf '%s' "$5" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/	/\\t/g' | tr '\n' ' ' | sed 's/\r//g')
     request POST "/npcs/$2/chat/bot" "{\"platform\":\"$3\",\"platform_user_id\":\"$4\",\"message\":\"$escaped_msg\"}"
     ;;
 
   # === Memories ===
   list-memories)
-    [ -z "$2" ] && echo "Usage: mw list-memories <npc_id> [page] [limit]" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw list-memories <npc_id> [page] [limit]" >&2 && exit $EXIT_USAGE
     page="${3:-1}"
     limit="${4:-20}"
     request GET "/npcs/$2/memories?page=${page}&limit=${limit}"
     ;;
   search-memories)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw search-memories <npc_id> '<json_body>'" >&2 && exit 1
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw search-memories <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
     request POST "/npcs/$2/memories/search" "$3"
     ;;
   create-memory)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-memory <npc_id> '<json_body>'" >&2 && exit 1
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-memory <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
     request POST "/npcs/$2/memories" "$3"
     ;;
 
   # === Life (Routines, Goals, Relationships) ===
   list-routines)
-    [ -z "$2" ] && echo "Usage: mw list-routines <npc_id>" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw list-routines <npc_id>" >&2 && exit $EXIT_USAGE
     request GET "/npcs/$2/routines"
     ;;
   create-routine)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-routine <npc_id> '<json_body>'" >&2 && exit 1
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-routine <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
     request POST "/npcs/$2/routines" "$3"
     ;;
   list-goals)
-    [ -z "$2" ] && echo "Usage: mw list-goals <npc_id>" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw list-goals <npc_id>" >&2 && exit $EXIT_USAGE
     request GET "/npcs/$2/goals"
     ;;
   create-goal)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-goal <npc_id> '<json_body>'" >&2 && exit 1
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-goal <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
     request POST "/npcs/$2/goals" "$3"
     ;;
   list-relationships)
-    [ -z "$2" ] && echo "Usage: mw list-relationships <npc_id>" >&2 && exit 1
+    [ -z "$2" ] && echo "Usage: mw list-relationships <npc_id>" >&2 && exit $EXIT_USAGE
     request GET "/npcs/$2/relationships"
     ;;
   create-relationship)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-relationship <npc_id> '<json_body>'" >&2 && exit 1
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-relationship <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
     request POST "/npcs/$2/relationships" "$3"
     ;;
 
   # === Channel Bindings ===
   bind-channel)
-    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] && echo "Usage: mw bind-channel <npc_id> <platform> <channel_id>" >&2 && exit 1
+    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] && echo "Usage: mw bind-channel <npc_id> <platform> <channel_id>" >&2 && exit $EXIT_USAGE
     request POST "/channels/bind" "{\"npc_id\":\"$2\",\"platform\":\"$3\",\"platform_channel_id\":\"$4\"}"
     ;;
   unbind-channel)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw unbind-channel <platform> <channel_id>" >&2 && exit 1
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw unbind-channel <platform> <channel_id>" >&2 && exit $EXIT_USAGE
     request DELETE "/channels/bind" "{\"platform\":\"$2\",\"platform_channel_id\":\"$3\"}"
     ;;
   list-bindings)
     request GET "/channels/bindings"
     ;;
   resolve-channel)
-    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw resolve-channel <platform> <channel_id>" >&2 && exit 1
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw resolve-channel <platform> <channel_id>" >&2 && exit $EXIT_USAGE
     request GET "/channels/resolve?platform=$2&platform_channel_id=$3"
     ;;
 
@@ -243,6 +247,6 @@ case "$1" in
     echo "  Project:"
     echo "    stats"
     echo "    health"
-    exit 1
+    exit $EXIT_USAGE
     ;;
 esac
