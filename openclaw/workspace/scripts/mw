@@ -10,28 +10,50 @@ if [ -z "$API_KEY" ]; then
   exit 1
 fi
 
+is_retryable() {
+  case "$1" in
+    6|7|28|56) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 request() {
   method="$1"
   path="$2"
   body="$3"
+  max_attempts=3
+  attempt=1
+  delay=1
 
-  if [ -n "$body" ]; then
-    result=$(curl -sf -X "$method" \
-      -H "x-api-key: $API_KEY" \
-      -H "Content-Type: application/json" \
-      -d "$body" \
-      "${BASE_URL}/api/v1${path}" 2>&1)
-  else
-    result=$(curl -sf -X "$method" \
-      -H "x-api-key: $API_KEY" \
-      "${BASE_URL}/api/v1${path}" 2>&1)
-  fi
-  status=$?
-  if [ $status -ne 0 ]; then
-    echo "Error: request failed (exit code $status)" >&2
-    return $status
-  fi
-  printf '%s' "$result"
+  while [ $attempt -le $max_attempts ]; do
+    if [ -n "$body" ]; then
+      result=$(curl -sf -X "$method" \
+        -H "x-api-key: $API_KEY" \
+        -H "Content-Type: application/json" \
+        -d "$body" \
+        "${BASE_URL}/api/v1${path}" 2>&1)
+    else
+      result=$(curl -sf -X "$method" \
+        -H "x-api-key: $API_KEY" \
+        "${BASE_URL}/api/v1${path}" 2>&1)
+    fi
+    status=$?
+
+    if [ $status -eq 0 ]; then
+      printf '%s' "$result"
+      return 0
+    fi
+
+    if ! is_retryable $status || [ $attempt -eq $max_attempts ]; then
+      echo "Error: request failed (exit code $status)" >&2
+      return $status
+    fi
+
+    echo "Retrying in ${delay}s (attempt $attempt/$max_attempts)..." >&2
+    sleep $delay
+    delay=$((delay * 2))
+    attempt=$((attempt + 1))
+  done
 }
 
 case "$1" in
