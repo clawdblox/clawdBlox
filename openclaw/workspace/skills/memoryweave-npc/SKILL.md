@@ -57,3 +57,23 @@ The NPC linked to each channel is resolved dynamically via the MemoryWeave API. 
   - **Other errors**: "Sorry, I couldn't process that message. Please try again."
 - Do NOT reveal that you are relaying messages through an API
 - The NPC has its own personality, memories, and conversation history — do not interfere with them
+
+## Platform-Specific Formatting
+
+When relaying the NPC's response, apply platform-appropriate formatting:
+
+### Discord
+- Preserve any markdown in the NPC's response as-is (Discord renders markdown natively)
+- Bold (`**text**`), italic (`*text*`), and code blocks all work directly
+
+### Telegram
+- Convert markdown to Telegram-compatible formatting:
+  - `**bold**` → `<b>bold</b>`
+  - `*italic*` → `<i>italic</i>`
+  - `` `code` `` → `<code>code</code>`
+  - Code blocks → `<pre>code</pre>`
+- Strip any formatting that Telegram does not support (e.g., strikethrough, spoiler tags)
+
+### General
+- Do not add any formatting that the NPC did not include in its response
+- If in doubt about formatting support, send plain text
