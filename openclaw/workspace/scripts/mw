@@ -2,6 +2,8 @@
 # MemoryWeave CLI wrapper for OpenClaw
 # Usage: mw <command> [args...]
 
+MW_VERSION="0.1.0"
+
 BASE_URL="${MEMORYWEAVE_BASE_URL:-http://localhost:3000}"
 API_KEY="${MEMORYWEAVE_API_KEY}"
 
@@ -59,6 +61,11 @@ request() {
 }
 
 case "$1" in
+  --version|-v)
+    echo "mw $MW_VERSION"
+    exit 0
+    ;;
+
   # === NPCs ===
   list-npcs)
     page="${2:-1}"
