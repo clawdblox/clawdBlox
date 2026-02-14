@@ -237,6 +237,14 @@ case "$1" in
     [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-memory <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
     request POST "/npcs/$2/memories" "$3"
     ;;
+  get-memory)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw get-memory <npc_id> <memory_id>" >&2 && exit $EXIT_USAGE
+    request GET "/npcs/$2/memories/$3"
+    ;;
+  delete-memory)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw delete-memory <npc_id> <memory_id>" >&2 && exit $EXIT_USAGE
+    request DELETE "/npcs/$2/memories/$3"
+    ;;
 
   # === Life (Routines, Goals, Relationships) ===
   list-routines)
