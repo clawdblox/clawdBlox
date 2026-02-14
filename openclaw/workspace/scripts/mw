@@ -42,6 +42,13 @@ request() {
   debug "$method ${BASE_URL}/api/v1${path}"
   [ -n "$body" ] && debug "Body: $body"
 
+  if [ -n "$body" ] && command -v jq >/dev/null 2>&1; then
+    if ! printf '%s' "$body" | jq . >/dev/null 2>&1; then
+      echo "Error: invalid JSON body" >&2
+      return 1
+    fi
+  fi
+
   while [ $attempt -le $max_attempts ]; do
     if [ -n "$body" ]; then
       result=$(curl -sf -X "$method" \
