@@ -26,10 +26,12 @@ The `mw` CLI script is available in the workspace scripts directory. All command
 
 ### NPCs
 
-**List all NPCs:**
+**List all NPCs (with optional sorting):**
 ```
 exec mw list-npcs
-exec mw list-npcs 2 10    # page 2, 10 per page
+exec mw list-npcs 2 10                  # page 2, 10 per page
+exec mw list-npcs 1 20 name asc         # sort by name ascending
+exec mw list-npcs 1 20 created_at desc  # sort by creation date (default)
 ```
 
 **Get NPC details:**
@@ -93,6 +95,11 @@ exec mw list-conversations <npc_id> 1 50    # page 1, 50 per page
 ```
 exec mw get-messages <conversation_id>
 exec mw get-messages <conversation_id> 100    # last 100 messages
+```
+
+**Export a full conversation (up to 1000 messages):**
+```
+exec mw export-conversation <conversation_id>
 ```
 
 ### Memories
