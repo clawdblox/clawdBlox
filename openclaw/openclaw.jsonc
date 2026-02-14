@@ -71,7 +71,20 @@
       // "botToken": "${TELEGRAM_BOT_TOKEN}",
 
       "dmPolicy": "allowlist",
-      "allowFrom": []  // Add Telegram user IDs of authorized devs
+      "allowFrom": [],  // Add Telegram user IDs of authorized devs
+
+      "groups": {
+        // Group allowlist — only respond in these group chats
+        // Replace GROUP_ID with your Telegram group/supergroup chat ID (negative number)
+        //
+        // "GROUP_ID": {
+        //   "slug": "my-game-group",
+        //   "requireMention": true,       // Only respond when @mentioned in groups
+        //   "replyBehavior": "reply-to",   // "reply-to" | "standalone"
+        //   "allowFrom": [],               // Restrict to specific user IDs (empty = all group members)
+        //   "skills": ["memoryweave-admin"]
+        // }
+      }
     }
   },
 
