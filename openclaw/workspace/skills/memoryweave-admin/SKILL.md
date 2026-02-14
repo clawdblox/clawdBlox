@@ -233,6 +233,24 @@ Bindings:       4 channels (3 Discord, 1 Telegram)
 API calls:      1,204 this week
 ```
 
+### Troubleshooting
+
+Common errors and how to handle them:
+
+| HTTP Code | Meaning | Likely Cause | Fix |
+|-----------|---------|--------------|-----|
+| 401 | Unauthorized | Invalid or expired API key | Check that `MEMORYWEAVE_API_KEY` is set correctly and the key is active |
+| 404 | Not Found | Wrong UUID or deleted entity | Verify the ID exists — use the corresponding `list-*` command first |
+| 422 | Validation Error | Invalid input data | Check required fields and value ranges (e.g., OCEAN values must be 0-1, importance must be a valid level) |
+| 429 | Rate Limited | Too many requests in a short period | Wait a moment and retry. Reduce request frequency for bulk operations |
+| 500 | Server Error | Internal server issue | This is not a client-side issue. Retry after a short wait. If persistent, check server logs |
+
+**Tips for debugging:**
+- Use `MW_DEBUG=1` to see full request/response details
+- Use `mw health` to verify the API is reachable
+- Invalid JSON will be caught before sending if `jq` is available
+- Check the response body for specific error messages — the API returns descriptive errors
+
 ## Constraints
 
 - Always use the `mw` CLI script via `exec` — do not use curl directly
