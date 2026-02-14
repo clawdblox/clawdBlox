@@ -279,6 +279,18 @@ case "$1" in
     [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw create-goal <npc_id> '<json_body>'" >&2 && exit $EXIT_USAGE
     request POST "/npcs/$2/goals" "$3"
     ;;
+  get-goal)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw get-goal <npc_id> <goal_id>" >&2 && exit $EXIT_USAGE
+    request GET "/npcs/$2/goals/$3"
+    ;;
+  update-goal)
+    [ -z "$2" ] || [ -z "$3" ] || [ -z "$4" ] && echo "Usage: mw update-goal <npc_id> <goal_id> '<json_body>'" >&2 && exit $EXIT_USAGE
+    request PUT "/npcs/$2/goals/$3" "$4"
+    ;;
+  delete-goal)
+    [ -z "$2" ] || [ -z "$3" ] && echo "Usage: mw delete-goal <npc_id> <goal_id>" >&2 && exit $EXIT_USAGE
+    request DELETE "/npcs/$2/goals/$3"
+    ;;
   list-relationships)
     [ -z "$2" ] && echo "Usage: mw list-relationships <npc_id>" >&2 && exit $EXIT_USAGE
     request GET "/npcs/$2/relationships"
