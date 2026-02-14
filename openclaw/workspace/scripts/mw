@@ -111,7 +111,57 @@ request() {
 case "$1" in
   --version|-v)
     echo "mw $MW_VERSION"
-    exit 0
+    exit $EXIT_OK
+    ;;
+
+  --help|-h)
+    echo "mw $MW_VERSION — MemoryWeave CLI"
+    echo ""
+    echo "Usage: mw <command> [args...]"
+    echo ""
+    echo "NPCs:"
+    echo "  list-npcs [page] [limit]                List all NPCs (paginated)"
+    echo "  get-npc <id>                             Get NPC details"
+    echo "  create-npc '<json>'                      Create a new NPC"
+    echo "  generate-npc '<json>'                    Generate an NPC with AI"
+    echo "  update-npc <id> '<json>'                 Update an NPC"
+    echo "  delete-npc <id>                          Delete an NPC"
+    echo ""
+    echo "Conversations:"
+    echo "  list-conversations <npc_id> [page] [limit]  List NPC conversations"
+    echo "  get-messages <conv_id> [limit]               Get conversation messages"
+    echo "  chat-bot <npc_id> <platform> <user_id> <msg> Send a bot message"
+    echo ""
+    echo "Memories:"
+    echo "  list-memories <npc_id> [page] [limit]   List NPC memories"
+    echo "  search-memories <npc_id> '<json>'        Search memories semantically"
+    echo "  create-memory <npc_id> '<json>'          Create a memory"
+    echo ""
+    echo "Life System:"
+    echo "  list-routines <npc_id>                   List NPC routines"
+    echo "  create-routine <npc_id> '<json>'         Create a routine"
+    echo "  list-goals <npc_id>                      List NPC goals"
+    echo "  create-goal <npc_id> '<json>'            Create a goal"
+    echo "  list-relationships <npc_id>              List NPC relationships"
+    echo "  create-relationship <npc_id> '<json>'    Create a relationship"
+    echo ""
+    echo "Channel Bindings:"
+    echo "  bind-channel <npc_id> <platform> <ch_id> Bind NPC to a channel"
+    echo "  unbind-channel <platform> <ch_id>        Unbind a channel"
+    echo "  list-bindings                            List all channel bindings"
+    echo "  resolve-channel <platform> <ch_id>       Resolve channel to NPC"
+    echo ""
+    echo "Project:"
+    echo "  stats                                    Get project statistics"
+    echo "  health                                   Check API health"
+    echo ""
+    echo "Environment variables:"
+    echo "  MEMORYWEAVE_API_KEY    API key (required)"
+    echo "  MEMORYWEAVE_BASE_URL  API base URL (default: http://localhost:3000)"
+    echo "  MW_TIMEOUT            Request timeout in seconds (default: 30)"
+    echo "  MW_DEBUG=1            Enable verbose output"
+    echo "  MW_RAW=1              Disable JSON pretty-printing"
+    exit $EXIT_OK
     ;;
 
   # === NPCs ===
@@ -230,43 +280,7 @@ case "$1" in
     ;;
 
   *)
-    echo "MemoryWeave CLI — Available commands:"
-    echo ""
-    echo "  NPCs:"
-    echo "    list-npcs [page] [limit]"
-    echo "    get-npc <npc_id>"
-    echo "    create-npc '<json>'"
-    echo "    generate-npc '<json>'"
-    echo "    update-npc <npc_id> '<json>'"
-    echo "    delete-npc <npc_id>"
-    echo ""
-    echo "  Conversations:"
-    echo "    list-conversations <npc_id> [page] [limit]"
-    echo "    get-messages <conversation_id> [limit]"
-    echo "    chat-bot <npc_id> <platform> <platform_user_id> <message>"
-    echo ""
-    echo "  Memories:"
-    echo "    list-memories <npc_id> [page] [limit]"
-    echo "    search-memories <npc_id> '<json>'"
-    echo "    create-memory <npc_id> '<json>'"
-    echo ""
-    echo "  Life:"
-    echo "    list-routines <npc_id>"
-    echo "    create-routine <npc_id> '<json>'"
-    echo "    list-goals <npc_id>"
-    echo "    create-goal <npc_id> '<json>'"
-    echo "    list-relationships <npc_id>"
-    echo "    create-relationship <npc_id> '<json>'"
-    echo ""
-    echo "  Channel Bindings:"
-    echo "    bind-channel <npc_id> <platform> <channel_id>"
-    echo "    unbind-channel <platform> <channel_id>"
-    echo "    list-bindings"
-    echo "    resolve-channel <platform> <channel_id>"
-    echo ""
-    echo "  Project:"
-    echo "    stats"
-    echo "    health"
+    echo "Unknown command: $1. Run 'mw --help' for usage." >&2
     exit $EXIT_USAGE
     ;;
 esac
