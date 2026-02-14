@@ -53,38 +53,58 @@ request() {
     fi
   fi
 
+  tmpfile=$(mktemp)
+  trap 'rm -f "$tmpfile"' EXIT
+
   while [ $attempt -le $max_attempts ]; do
     if [ -n "$body" ]; then
-      result=$(curl -sf -X "$method" \
+      http_code=$(curl -s -X "$method" \
         --max-time "${MW_TIMEOUT:-30}" --connect-timeout 10 \
         -H "x-api-key: $API_KEY" \
         -H "Content-Type: application/json" \
         -d "$body" \
+        -o "$tmpfile" -w '%{http_code}' \
         "${BASE_URL}/api/v1${path}" 2>&1)
     else
-      result=$(curl -sf -X "$method" \
+      http_code=$(curl -s -X "$method" \
         --max-time "${MW_TIMEOUT:-30}" --connect-timeout 10 \
         -H "x-api-key: $API_KEY" \
+        -o "$tmpfile" -w '%{http_code}' \
         "${BASE_URL}/api/v1${path}" 2>&1)
     fi
     status=$?
 
-    if [ $status -eq 0 ]; then
-      debug "Response (status: ok)"
-      printf '%s' "$result" | format_json
-      return 0
+    if [ $status -ne 0 ]; then
+      debug "Curl exit code: $status"
+      if ! is_retryable $status || [ $attempt -eq $max_attempts ]; then
+        echo "Error: request failed (exit code $status)" >&2
+        rm -f "$tmpfile"
+        return $EXIT_NETWORK
+      fi
+      echo "Retrying in ${delay}s (attempt $attempt/$max_attempts)..." >&2
+      sleep $delay
+      delay=$((delay * 2))
+      attempt=$((attempt + 1))
+      continue
     fi
-    debug "Curl exit code: $status"
 
-    if ! is_retryable $status || [ $attempt -eq $max_attempts ]; then
-      echo "Error: request failed (exit code $status)" >&2
-      return $EXIT_NETWORK
+    debug "HTTP $http_code"
+
+    if [ "$http_code" -ge 400 ] 2>/dev/null; then
+      err_msg=$(cat "$tmpfile")
+      if command -v jq >/dev/null 2>&1; then
+        parsed=$(printf '%s' "$err_msg" | jq -r '.error // .message // empty' 2>/dev/null)
+        [ -n "$parsed" ] && err_msg="$parsed"
+      fi
+      echo "Error: HTTP $http_code — $err_msg" >&2
+      rm -f "$tmpfile"
+      return $EXIT_API
     fi
 
-    echo "Retrying in ${delay}s (attempt $attempt/$max_attempts)..." >&2
-    sleep $delay
-    delay=$((delay * 2))
-    attempt=$((attempt + 1))
+    debug "Response (status: ok)"
+    cat "$tmpfile" | format_json
+    rm -f "$tmpfile"
+    return $EXIT_OK
   done
 }
 
