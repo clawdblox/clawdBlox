@@ -133,18 +133,27 @@ exec mw delete-memory <npc_id> <memory_id>
 ```
 exec mw list-routines <npc_id>
 exec mw create-routine <npc_id> '{"name":"Morning patrol","start_hour":6,"end_hour":8,"day_of_week":[1,2,3,4,5],"location":"Village gates","activity":"Patrolling the perimeter","interruptible":true,"priority":5}'
+exec mw get-routine <npc_id> <routine_id>
+exec mw update-routine <npc_id> <routine_id> '{"start_hour":7,"end_hour":9}'
+exec mw delete-routine <npc_id> <routine_id>
 ```
 
 **Goals:**
 ```
 exec mw list-goals <npc_id>
 exec mw create-goal <npc_id> '{"title":"Find the lost artifact","goal_type":"personal","priority":8,"status":"active","success_criteria":["Locate the map","Travel to the ruins","Retrieve the artifact"]}'
+exec mw get-goal <npc_id> <goal_id>
+exec mw update-goal <npc_id> <goal_id> '{"status":"completed","priority":10}'
+exec mw delete-goal <npc_id> <goal_id>
 ```
 
 **Relationships:**
 ```
 exec mw list-relationships <npc_id>
 exec mw create-relationship <npc_id> '{"target_type":"player","target_id":"discord:123456789"}'
+exec mw get-relationship <npc_id> <relationship_id>
+exec mw update-relationship <npc_id> <relationship_id> '{"trust":0.8,"familiarity":0.6}'
+exec mw delete-relationship <npc_id> <relationship_id>
 ```
 
 ### Project Stats
