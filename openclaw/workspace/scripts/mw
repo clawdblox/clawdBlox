@@ -16,16 +16,22 @@ request() {
   body="$3"
 
   if [ -n "$body" ]; then
-    curl -sf -X "$method" \
+    result=$(curl -sf -X "$method" \
       -H "x-api-key: $API_KEY" \
       -H "Content-Type: application/json" \
       -d "$body" \
-      "${BASE_URL}/api/v1${path}"
+      "${BASE_URL}/api/v1${path}" 2>&1)
   else
-    curl -sf -X "$method" \
+    result=$(curl -sf -X "$method" \
       -H "x-api-key: $API_KEY" \
-      "${BASE_URL}/api/v1${path}"
+      "${BASE_URL}/api/v1${path}" 2>&1)
   fi
+  status=$?
+  if [ $status -ne 0 ]; then
+    echo "Error: request failed (exit code $status)" >&2
+    return $status
+  fi
+  printf '%s' "$result"
 }
 
 case "$1" in
