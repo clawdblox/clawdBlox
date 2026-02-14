@@ -201,6 +201,38 @@ When presenting results to the user:
 - For stats: present as a clean summary with counts and averages
 - Always use the NPC name (not just the UUID) when referring to NPCs
 
+### Response Formatting Examples
+
+**NPC Detail View:**
+```
+**Elena** (id: `a1b2c3d4-...`)
+Status: active | Mood: curious
+Personality (OCEAN): O:0.8 C:0.6 E:0.4 A:0.7 N:0.3
+Speaking style: warm, educated, uses metaphors
+Backstory: Elena grew up in a small coastal village...
+Memories: 12 | Routines: 3 | Goals: 2 | Relationships: 5
+```
+
+**Memory Search Results:**
+```
+Found 3 memories matching "battle":
+
+1. [episodic, significant] "Led the charge at the Battle of Dawn" (2 days ago)
+2. [emotional, critical] "Lost her mentor during the siege" (5 days ago)
+3. [semantic, moderate] "Knows tactical formations from training" (1 week ago)
+```
+
+**Stats Dashboard:**
+```
+📊 Project Overview
+─────────────────
+NPCs:           5 (3 active, 2 idle)
+Conversations:  23 total, 8 active
+Memories:       142 across all NPCs
+Bindings:       4 channels (3 Discord, 1 Telegram)
+API calls:      1,204 this week
+```
+
 ## Constraints
 
 - Always use the `mw` CLI script via `exec` — do not use curl directly
