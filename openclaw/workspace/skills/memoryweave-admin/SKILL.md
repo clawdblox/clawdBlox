@@ -233,6 +233,47 @@ Bindings:       4 channels (3 Discord, 1 Telegram)
 API calls:      1,204 this week
 ```
 
+### Onboarding Workflow
+
+Step-by-step guide for setting up a new NPC from scratch:
+
+1. **Create the NPC** — either manually or via AI generation:
+   ```
+   exec mw create-npc '{"name":"Tavern Keeper","personality":{...},"speaking_style":{...},"backstory":"..."}'
+   ```
+   or:
+   ```
+   exec mw generate-npc '{"description":"A cheerful tavern keeper who loves gossip","setting":"fantasy medieval"}'
+   ```
+
+2. **Add backstory memories** — give the NPC foundational knowledge:
+   ```
+   exec mw create-memory <npc_id> '{"content":"Has owned the Golden Flagon tavern for 20 years","type":"semantic","importance":"significant"}'
+   exec mw create-memory <npc_id> '{"content":"Lost a close friend to bandits on the north road","type":"emotional","importance":"critical"}'
+   ```
+
+3. **Create routines** — define the NPC's daily schedule:
+   ```
+   exec mw create-routine <npc_id> '{"name":"Open the tavern","start_hour":8,"end_hour":10,"location":"Tavern","activity":"Cleaning and preparing for guests"}'
+   ```
+
+4. **Set goals** — give the NPC purpose and direction:
+   ```
+   exec mw create-goal <npc_id> '{"title":"Expand the tavern","goal_type":"professional","priority":7,"status":"active"}'
+   ```
+
+5. **Bind to a channel** — connect the NPC to a Discord or Telegram channel:
+   ```
+   exec mw bind-channel <npc_id> discord <channel_id>
+   ```
+
+6. **Test the NPC** — send a test message to verify everything works:
+   ```
+   exec mw chat-bot <npc_id> discord test-user-id "Hello! What's the special today?"
+   ```
+
+**Recommended order matters:** Create the NPC first, add memories and personality before binding to a channel. This ensures the NPC has enough context to respond meaningfully from the first interaction.
+
 ### Troubleshooting
 
 Common errors and how to handle them:
