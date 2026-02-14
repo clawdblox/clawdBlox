@@ -180,7 +180,9 @@ case "$1" in
   list-npcs)
     page="${2:-1}"
     limit="${3:-20}"
-    request GET "/npcs?page=${page}&limit=${limit}"
+    sort_by="${4:-created_at}"
+    sort_order="${5:-desc}"
+    request GET "/npcs?page=${page}&limit=${limit}&sort_by=${sort_by}&sort_order=${sort_order}"
     ;;
   get-npc)
     [ -z "$2" ] && echo "Usage: mw get-npc <npc_id>" >&2 && exit $EXIT_USAGE
