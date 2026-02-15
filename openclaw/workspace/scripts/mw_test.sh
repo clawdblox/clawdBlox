@@ -132,6 +132,38 @@ run_mw() {
   LAST_EXIT=$_mw_exit
 }
 
+run_mw_env() {
+  # Like run_mw but accepts extra env vars before '--'
+  # Usage: run_mw_env MW_DEBUG=1 -- stats
+  # Extra vars override defaults (e.g. MEMORYWEAVE_API_KEY= to unset)
+  _mw_stdout="$TEST_DIR/stdout"
+  _mw_stderr="$TEST_DIR/stderr"
+  _extra=""
+  while [ $# -gt 0 ] && [ "$1" != "--" ]; do
+    _extra="$_extra $1"
+    shift
+  done
+  [ "$1" = "--" ] && shift
+
+  set +e
+  # shellcheck disable=SC2086
+  env \
+    PATH="$TEST_DIR/bin:$PATH" \
+    TEST_DIR="$TEST_DIR" \
+    MEMORYWEAVE_API_KEY="test-key-123" \
+    MEMORYWEAVE_BASE_URL="http://mock:3000" \
+    MW_NO_COLOR=1 \
+    MW_TIMEOUT=5 \
+    $_extra \
+    sh "$MW_SCRIPT" "$@" >"$_mw_stdout" 2>"$_mw_stderr"
+  _mw_exit=$?
+  set -e
+
+  LAST_STDOUT=$(cat "$_mw_stdout")
+  LAST_STDERR=$(cat "$_mw_stderr")
+  LAST_EXIT=$_mw_exit
+}
+
 assert_eq() {
   label="$1"
   expected="$2"
@@ -220,6 +252,14 @@ assert_contains "missing arg shows usage" "$LAST_STDERR" "Usage:"
 
 run_mw chat-bot npc1 discord
 assert_exit_code "chat-bot missing args exits 1" 1
+
+run_mw
+assert_exit_code "no command exits 1" 1
+assert_contains "no command shows error" "$LAST_STDERR" "Unknown command"
+
+run_mw_env MEMORYWEAVE_API_KEY= -- stats
+assert_exit_code "missing API key exits 1" 1
+assert_contains "missing API key message" "$LAST_STDERR" "MEMORYWEAVE_API_KEY"
 
 # ── 2. URL Construction ────────────────────────────────────────────
 
@@ -327,6 +367,13 @@ run_mw chat-bot npc1 discord user1 "col1	col2"
 curl_args=$(get_curl_log)
 assert_contains "escaped tab" "$curl_args" 'col1\tcol2'
 
+# Test newline in message
+configure_mock 0 200 '{"sent":true}'
+_msg="$(printf 'line1\nline2')"
+run_mw chat-bot npc1 discord user1 "$_msg"
+curl_args=$(get_curl_log)
+assert_contains "escaped newline" "$curl_args" 'line1\nline2'
+
 # ── 6. HTTP Status Handling ────────────────────────────────────────
 
 section "6. HTTP status handling"
@@ -373,22 +420,7 @@ run_mw stats
 assert_not_contains "no debug by default" "$LAST_STDERR" "[DEBUG]"
 
 # Debug ON
-_mw_stdout="$TEST_DIR/stdout"
-_mw_stderr="$TEST_DIR/stderr"
-set +e
-PATH="$TEST_DIR/bin:$PATH" \
-  TEST_DIR="$TEST_DIR" \
-  MEMORYWEAVE_API_KEY="test-key-123" \
-  MEMORYWEAVE_BASE_URL="http://mock:3000" \
-  MW_NO_COLOR=1 \
-  MW_DEBUG=1 \
-  MW_TIMEOUT=5 \
-  sh "$MW_SCRIPT" stats >"$_mw_stdout" 2>"$_mw_stderr"
-_mw_exit=$?
-set -e
-LAST_STDOUT=$(cat "$_mw_stdout")
-LAST_STDERR=$(cat "$_mw_stderr")
-LAST_EXIT=$_mw_exit
+run_mw_env MW_DEBUG=1 -- stats
 
 assert_contains "debug shows [DEBUG]" "$LAST_STDERR" "[DEBUG]"
 assert_contains "debug shows method" "$LAST_STDERR" "GET"
@@ -401,22 +433,7 @@ section "9. Raw output (MW_RAW)"
 configure_mock 0 200 '{"raw":true}'
 
 # MW_RAW=1 should output unformatted JSON
-_mw_stdout="$TEST_DIR/stdout"
-_mw_stderr="$TEST_DIR/stderr"
-set +e
-PATH="$TEST_DIR/bin:$PATH" \
-  TEST_DIR="$TEST_DIR" \
-  MEMORYWEAVE_API_KEY="test-key-123" \
-  MEMORYWEAVE_BASE_URL="http://mock:3000" \
-  MW_NO_COLOR=1 \
-  MW_RAW=1 \
-  MW_TIMEOUT=5 \
-  sh "$MW_SCRIPT" stats >"$_mw_stdout" 2>"$_mw_stderr"
-_mw_exit=$?
-set -e
-LAST_STDOUT=$(cat "$_mw_stdout")
-LAST_STDERR=$(cat "$_mw_stderr")
-LAST_EXIT=$_mw_exit
+run_mw_env MW_RAW=1 -- stats
 
 assert_eq "raw output" '{"raw":true}' "$LAST_STDOUT"
 assert_exit_code "raw exits 0" 0
@@ -442,6 +459,138 @@ assert_exit_code "health down → exit 2" 2
 configure_mock 0 503 '{"status":"unhealthy"}'
 run_mw health
 assert_exit_code "health 503 → exit 3" 3
+
+# ── 11. URL Encoding ──────────────────────────────────────────────
+
+section "11. URL encoding"
+
+configure_mock 0 200 '{"npcs":[]}'
+run_mw list-npcs 1 20 "created at" asc
+curl_args=$(get_curl_log)
+assert_contains "space encoded in sort_by" "$curl_args" "sort_by=created%20at"
+assert_exit_code "list-npcs with space exits 0" 0
+
+configure_mock 0 200 '{"npc_id":"npc1"}'
+run_mw resolve-channel discord 'ch&id=1'
+curl_args=$(get_curl_log)
+assert_contains "& encoded in channel_id" "$curl_args" "ch%26id%3D1"
+assert_contains "resolve-channel URL path" "$curl_args" "/channels/resolve"
+
+# ── 12. JSON Body Validation ─────────────────────────────────────
+
+section "12. JSON body validation"
+
+configure_mock 0 200 '{"created":true}'
+run_mw create-npc 'not valid json'
+assert_exit_code "invalid JSON exits 1" 1
+assert_contains "invalid JSON message" "$LAST_STDERR" "invalid JSON"
+
+configure_mock 0 200 '{"created":true}'
+run_mw create-npc '{"name":"Valid"}'
+assert_exit_code "valid JSON exits 0" 0
+
+# ── 13. API Key Header ───────────────────────────────────────────
+
+section "13. API key header"
+
+configure_mock 0 200 '{"ok":true}'
+run_mw stats
+curl_args=$(get_curl_log)
+assert_contains "api key header name" "$curl_args" "x-api-key:"
+assert_contains "api key header value" "$curl_args" "test-key-123"
+
+# ── 14. PUT Method + Update Commands ─────────────────────────────
+
+section "14. PUT method + update commands"
+
+configure_mock 0 200 '{"updated":true}'
+run_mw update-npc npc1 '{"name":"Updated"}'
+curl_args=$(get_curl_log)
+assert_contains "update-npc method" "$curl_args" "-X PUT"
+assert_contains "update-npc URL" "$curl_args" "/api/v1/npcs/npc1"
+assert_contains "update-npc body" "$curl_args" '{"name":"Updated"}'
+
+run_mw update-npc npc1
+assert_exit_code "update-npc missing body exits 1" 1
+
+# ── 15. Channel Bindings ─────────────────────────────────────────
+
+section "15. Channel bindings"
+
+configure_mock 0 200 '{"bound":true}'
+run_mw bind-channel npc1 discord chan1
+curl_args=$(get_curl_log)
+assert_contains "bind-channel method" "$curl_args" "-X POST"
+assert_contains "bind-channel body npc_id" "$curl_args" '"npc_id":"npc1"'
+
+configure_mock 0 200 '{"unbound":true}'
+run_mw unbind-channel discord chan1
+curl_args=$(get_curl_log)
+assert_contains "unbind-channel method" "$curl_args" "-X DELETE"
+assert_contains "unbind-channel body platform" "$curl_args" '"platform":"discord"'
+
+configure_mock 0 200 '{"npc_id":"npc1"}'
+run_mw resolve-channel discord chan1
+curl_args=$(get_curl_log)
+assert_contains "resolve-channel method" "$curl_args" "-X GET"
+assert_contains "resolve-channel platform param" "$curl_args" "platform=discord"
+
+configure_mock 0 200 '{"bindings":[]}'
+run_mw list-bindings
+curl_args=$(get_curl_log)
+assert_contains "list-bindings URL" "$curl_args" "/channels/bindings"
+
+# ── 16. Life System (Routines) ───────────────────────────────────
+
+section "16. Life system (routines)"
+
+configure_mock 0 200 '{"routines":[]}'
+run_mw list-routines npc1
+curl_args=$(get_curl_log)
+assert_contains "list-routines URL" "$curl_args" "/npcs/npc1/routines"
+
+configure_mock 0 200 '{"created":true}'
+run_mw create-routine npc1 '{"name":"Morning"}'
+curl_args=$(get_curl_log)
+assert_contains "create-routine method" "$curl_args" "-X POST"
+
+configure_mock 0 200 '{"deleted":true}'
+run_mw delete-routine npc1 routine1
+curl_args=$(get_curl_log)
+assert_contains "delete-routine URL" "$curl_args" "/npcs/npc1/routines/routine1"
+
+run_mw create-routine npc1
+assert_exit_code "create-routine missing body exits 1" 1
+
+# ── 17. Memory & Conversation Commands ───────────────────────────
+
+section "17. Memory & conversation commands"
+
+configure_mock 0 200 '{"results":[]}'
+run_mw search-memories npc1 '{"query":"hello"}'
+curl_args=$(get_curl_log)
+assert_contains "search-memories method" "$curl_args" "-X POST"
+assert_contains "search-memories URL" "$curl_args" "/npcs/npc1/memories/search"
+
+configure_mock 0 200 '{"messages":[]}'
+run_mw get-messages conv1
+curl_args=$(get_curl_log)
+assert_contains "get-messages default limit" "$curl_args" "limit=50"
+
+configure_mock 0 200 '{"messages":[]}'
+run_mw export-conversation conv1
+curl_args=$(get_curl_log)
+assert_contains "export-conversation limit" "$curl_args" "limit=1000"
+
+configure_mock 0 200 '{"memories":[]}'
+run_mw list-memories npc1
+curl_args=$(get_curl_log)
+assert_contains "list-memories URL" "$curl_args" "/npcs/npc1/memories"
+
+configure_mock 0 200 '{"id":"mem1"}'
+run_mw get-memory npc1 mem1
+curl_args=$(get_curl_log)
+assert_contains "get-memory URL" "$curl_args" "/npcs/npc1/memories/mem1"
 
 # ─── Summary ────────────────────────────────────────────────────────
 
