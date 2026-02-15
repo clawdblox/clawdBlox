@@ -10,7 +10,14 @@ export const conversationRepository = {
     return result.rows[0] || null;
   },
 
-  async findById(id: string): Promise<Conversation | null> {
+  async findById(id: string, projectId?: string): Promise<Conversation | null> {
+    if (projectId) {
+      const result = await pool.query(
+        'SELECT c.* FROM conversations c JOIN npcs n ON c.npc_id = n.id WHERE c.id = $1 AND n.project_id = $2',
+        [id, projectId],
+      );
+      return result.rows[0] || null;
+    }
     const result = await pool.query('SELECT * FROM conversations WHERE id = $1', [id]);
     return result.rows[0] || null;
   },

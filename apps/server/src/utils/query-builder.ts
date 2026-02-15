@@ -2,6 +2,13 @@ import { pool } from '../config/database';
 
 const ALLOWED_TABLES = new Set(['memories', 'routines', 'goals', 'relationships']);
 
+const ALLOWED_COLUMNS: Record<string, Set<string>> = {
+  memories: new Set(['importance', 'vividness', 'content', 'metadata']),
+  routines: new Set(['name', 'start_hour', 'end_hour', 'day_of_week', 'location', 'activity', 'interruptible', 'priority']),
+  relationships: new Set(['affinity', 'trust', 'familiarity']),
+  goals: new Set(['title', 'priority', 'progress', 'status', 'success_criteria']),
+};
+
 interface DynamicUpdateOptions {
   table: string;
   data: Record<string, unknown>;
@@ -26,8 +33,13 @@ export async function dynamicUpdate<T>(options: DynamicUpdateOptions): Promise<T
   const values: unknown[] = [];
   let idx = 1;
 
+  const allowedCols = ALLOWED_COLUMNS[table];
+
   for (const [key, value] of Object.entries(data)) {
     if (value === undefined) continue;
+    if (!allowedCols?.has(key)) {
+      throw new Error(`dynamicUpdate: column "${key}" is not allowed for table "${table}"`);
+    }
     const cast = castMap[key] ? `::${castMap[key]}` : '';
     fields.push(`${key} = $${idx}${cast}`);
     values.push(serializeJson.includes(key) ? JSON.stringify(value) : value);

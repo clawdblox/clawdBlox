@@ -9,12 +9,12 @@ export const projectSettingsSchema = z.object({
 });
 
 export const createProjectSchema = z.object({
-  name: z.string().min(1).max(200),
+  name: z.string().trim().min(1).max(200),
   groq_api_key: z.string().optional(),
 });
 
 export const updateProjectSchema = z.object({
-  name: z.string().min(1).max(200).optional(),
+  name: z.string().trim().min(1).max(200).optional(),
   groq_api_key: z.string().optional(),
   settings: projectSettingsSchema.optional(),
 });

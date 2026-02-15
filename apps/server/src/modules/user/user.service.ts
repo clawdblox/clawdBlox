@@ -6,7 +6,7 @@ import { generateTokenPair, verifyRefreshToken } from '../../utils/jwt';
 import { generateApiKey, hashApiKey } from '../../utils/api-key';
 import { redis } from '../../config/database';
 import type { TokenPair, UserPublic, User } from '@clawdblox/memoryweave-shared';
-import { ConflictError, AuthError, NotFoundError } from '../../utils/errors';
+import { ConflictError, AuthError, NotFoundError, ForbiddenError } from '../../utils/errors';
 
 const BCRYPT_ROUNDS = 12;
 const DUMMY_HASH = bcrypt.hashSync('dummy-password-for-timing', BCRYPT_ROUNDS);
@@ -161,13 +161,26 @@ export const userService = {
     return toPublic(user);
   },
 
-  async updateUser(id: string, data: {
+  async updateUser(id: string, projectId: string, data: {
     email?: string;
     password?: string;
     display_name?: string;
     role?: string;
     is_active?: boolean;
   }): Promise<UserPublic> {
+    const user = await userRepository.findById(id);
+    if (!user || user.project_id !== projectId) throw new NotFoundError('User', id);
+
+    // Prevent downgrading or deactivating the last owner
+    const isLosingOwner = (data.role && data.role !== 'owner' && user.role === 'owner')
+      || (data.is_active === false && user.role === 'owner');
+    if (isLosingOwner) {
+      const ownerCount = await userRepository.countOwners(projectId);
+      if (ownerCount <= 1) {
+        throw new ForbiddenError('Cannot remove the last owner of the project');
+      }
+    }
+
     const { password, ...fields } = data;
     const updateData: Record<string, unknown> = {};
 
@@ -178,13 +191,22 @@ export const userService = {
       updateData.password_hash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     }
 
-    const user = await userRepository.update(id, updateData);
-    if (!user) throw new NotFoundError('User', id);
-    return toPublic(user);
+    const updated = await userRepository.update(id, updateData);
+    if (!updated) throw new NotFoundError('User', id);
+    return toPublic(updated);
   },
 
-  async deleteUser(id: string): Promise<void> {
-    const deleted = await userRepository.delete(id);
-    if (!deleted) throw new NotFoundError('User', id);
+  async deleteUser(id: string, projectId: string): Promise<void> {
+    const user = await userRepository.findById(id);
+    if (!user || user.project_id !== projectId) throw new NotFoundError('User', id);
+
+    if (user.role === 'owner') {
+      const ownerCount = await userRepository.countOwners(projectId);
+      if (ownerCount <= 1) {
+        throw new ForbiddenError('Cannot delete the last owner of the project');
+      }
+    }
+
+    await userRepository.delete(id);
   },
 };

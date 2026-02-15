@@ -37,6 +37,9 @@ export async function streamChat(
       }
     } finally {
       clearInterval(timeoutCheck);
+      if (typeof stream.return === 'function') {
+        await stream.return(undefined).catch(() => {});
+      }
     }
 
     if (!timedOut && ws.readyState === ws.OPEN) {

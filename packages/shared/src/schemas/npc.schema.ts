@@ -26,7 +26,7 @@ export const speakingStyleSchema = z.object({
 });
 
 export const createNpcSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: z.string().trim().min(1).max(100),
   personality: oceanPersonalitySchema,
   speaking_style: speakingStyleSchema,
   backstory: z.string().min(1).max(5000),
@@ -35,7 +35,7 @@ export const createNpcSchema = z.object({
 });
 
 export const updateNpcSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
+  name: z.string().trim().min(1).max(100).optional(),
   personality: oceanPersonalitySchema.partial().optional(),
   speaking_style: speakingStyleSchema.partial().optional(),
   backstory: z.string().min(1).max(5000).optional(),
@@ -60,9 +60,14 @@ export const bindChannelSchema = z.object({
   ...channelFields,
 });
 
-export const unbindChannelSchema = z.object(channelFields);
+export const unbindChannelSchema = z.object({
+  ...channelFields,
+  npc_id: z.string().uuid().optional(),
+});
 
 export const resolveChannelQuery = z.object(channelFields);
+
+export const listChannelNpcsQuery = z.object(channelFields);
 
 export type CreateNpcInput = z.infer<typeof createNpcSchema>;
 export type UpdateNpcInput = z.infer<typeof updateNpcSchema>;
@@ -70,3 +75,4 @@ export type GenerateNpcInput = z.infer<typeof generateNpcSchema>;
 export type BindChannelInput = z.infer<typeof bindChannelSchema>;
 export type UnbindChannelInput = z.infer<typeof unbindChannelSchema>;
 export type ResolveChannelQuery = z.infer<typeof resolveChannelQuery>;
+export type ListChannelNpcsQuery = z.infer<typeof listChannelNpcsQuery>;

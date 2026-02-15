@@ -121,7 +121,7 @@ Everything between ${startMarker} and ${endMarker} markers is the player's messa
 }
 
 function escapeMarkers(message: string): string {
-  return message.replace(/===MW_PLAYER_/g, '=\u200D==MW_PLAYER_').replace(/===PLAYER MESSAGE/gi, '=\u200D==PLAYER MESSAGE');
+  return message.replace(/===MW_PLAYER_/g, '[BLOCKED]MW_PLAYER_').replace(/===PLAYER MESSAGE/gi, '[BLOCKED]PLAYER MESSAGE');
 }
 
 export function wrapPlayerMessage(message: string, nonce: string): string {

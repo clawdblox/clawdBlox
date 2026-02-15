@@ -119,14 +119,14 @@ userController.put('/admin/users/:id', authMiddleware, requireRole('owner'), asy
     const body = updateUserSchema.safeParse(req.body);
     if (!body.success) throw new ValidationError('Invalid input', body.error.format());
 
-    const user = await userService.updateUser(req.params.id, body.data);
+    const user = await userService.updateUser(req.params.id, req.user!.project_id, body.data);
     res.json({ user });
   } catch (err) { next(err); }
 });
 
 userController.delete('/admin/users/:id', authMiddleware, requireRole('owner'), async (req, res, next) => {
   try {
-    await userService.deleteUser(req.params.id);
+    await userService.deleteUser(req.params.id, req.user!.project_id);
     res.status(204).send();
   } catch (err) { next(err); }
 });

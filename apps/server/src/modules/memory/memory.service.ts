@@ -138,7 +138,7 @@ Return an empty array [] if no notable memories.`;
       fullResponse += token;
     }
 
-    const match = fullResponse.match(/\[[\s\S]*?\]/);
+    const match = fullResponse.match(/\[[\s\S]*\]/);
     if (!match) return [];
 
     let parsed: unknown;

@@ -30,9 +30,7 @@ export async function detectInjection(playerId: string, message: string): Promis
     if (pattern.test(message)) {
       const key = `${RATE_LIMIT_KEY_PREFIX}${playerId}`;
       const count = await redis.incr(key);
-      if (count === 1) {
-        await redis.expire(key, WINDOW_SECONDS);
-      }
+      await redis.expire(key, WINDOW_SECONDS);
 
       if (count > MAX_ATTEMPTS) {
         throw new RateLimitError('Too many suspicious messages. Please try again later.');

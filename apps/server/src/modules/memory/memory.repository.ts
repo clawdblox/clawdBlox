@@ -110,7 +110,7 @@ export const memoryRepository = {
 
     const result = await pool.query(
       `SELECT ${MEMORY_COLUMNS},
-              (1 - (embedding <=> $${vectorIdx}::vector)) * CASE WHEN access_count > 0 THEN 1.3 ELSE 1.0 END AS similarity
+              LEAST(1.0, (1 - (embedding <=> $${vectorIdx}::vector)) * CASE WHEN access_count > 0 THEN 1.3 ELSE 1.0 END) AS similarity
        FROM memories
        WHERE ${conditions.join(' AND ')}
        ORDER BY similarity DESC

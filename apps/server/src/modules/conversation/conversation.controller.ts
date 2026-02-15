@@ -8,6 +8,7 @@ import { sanitizeMiddleware } from '../../middleware/sanitize.middleware';
 import { chatMessageSchema, botChatMessageSchema, paginationQuery } from '@clawdblox/memoryweave-shared';
 import { ValidationError, NotFoundError } from '../../utils/errors';
 import { npcRepository } from '../npc/npc.repository';
+import { playerRepository } from '../player/player.repository';
 
 export const conversationController = Router();
 
@@ -45,11 +46,8 @@ conversationController.get(
     try {
       const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 50, 1), 200);
 
-      const conversation = await conversationRepository.findById(req.params.id);
+      const conversation = await conversationRepository.findById(req.params.id, req.projectId!);
       if (!conversation) throw new NotFoundError('Conversation', req.params.id);
-
-      const npc = await npcRepository.findById(conversation.npc_id, req.projectId!);
-      if (!npc) throw new NotFoundError('NPC', conversation.npc_id);
 
       const messages = await conversationRepository.getMessages(req.params.id, limit);
       res.json({ messages });
@@ -90,7 +88,8 @@ conversationController.post(
       const body = botChatMessageSchema.safeParse(req.body);
       if (!body.success) throw new ValidationError('Invalid input', body.error.format());
 
-      const playerId = `${body.data.platform}:${body.data.platform_user_id}`;
+      const canonical = await playerRepository.findCanonicalId(req.projectId!, body.data.platform, body.data.platform_user_id);
+      const playerId = canonical ?? `${body.data.platform}:${body.data.platform_user_id}`;
       const result = await conversationService.chat(
         req.params.id,
         req.project!,

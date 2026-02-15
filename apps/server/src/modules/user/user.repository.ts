@@ -76,4 +76,12 @@ export const userRepository = {
     const result = await pool.query('SELECT COUNT(*) FROM users');
     return parseInt(result.rows[0].count, 10);
   },
+
+  async countOwners(projectId: string): Promise<number> {
+    const result = await pool.query(
+      "SELECT COUNT(*) FROM users WHERE project_id = $1 AND role = 'owner' AND is_active = true",
+      [projectId],
+    );
+    return parseInt(result.rows[0].count, 10);
+  },
 };
