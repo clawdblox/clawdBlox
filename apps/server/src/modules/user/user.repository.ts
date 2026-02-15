@@ -1,6 +1,8 @@
 import { pool } from '../../config/database';
 import type { User } from '@clawdblox/memoryweave-shared';
 
+const ALLOWED_COLUMNS = new Set(['email', 'password_hash', 'display_name', 'role', 'is_active', 'last_login_at']);
+
 export const userRepository = {
   async findByEmail(email: string): Promise<User | null> {
     const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
@@ -49,6 +51,7 @@ export const userRepository = {
 
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
+        if (!ALLOWED_COLUMNS.has(key)) throw new Error(`Invalid column: ${key}`);
         fields.push(`${key} = $${idx}`);
         values.push(value);
         idx++;

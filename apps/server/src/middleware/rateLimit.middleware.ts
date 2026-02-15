@@ -15,10 +15,7 @@ function createRateLimit(config: RateLimitConfig) {
     try {
       const key = `rl:${config.keyGenerator(req)}`;
       const current = await redis.incr(key);
-
-      if (current === 1) {
-        await redis.expire(key, config.windowMinutes * 60);
-      }
+      await redis.expire(key, config.windowMinutes * 60);
 
       if (current > config.max) {
         res.set('Retry-After', String(config.windowMinutes * 60));

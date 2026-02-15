@@ -2,6 +2,7 @@ import { pool } from '../../config/database';
 import type { NPC, OceanPersonality } from '@clawdblox/memoryweave-shared';
 
 const JSON_FIELDS = new Set(['personality', 'speaking_style']);
+const ALLOWED_COLUMNS = new Set(['name', 'personality', 'speaking_style', 'backstory', 'system_prompt', 'mood', 'is_active']);
 
 export const npcRepository = {
   async findAll(projectId: string, page: number, limit: number): Promise<{ npcs: NPC[]; total: number }> {
@@ -66,6 +67,7 @@ export const npcRepository = {
 
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
+        if (!ALLOWED_COLUMNS.has(key)) throw new Error(`Invalid column: ${key}`);
         fields.push(`${key} = $${idx}`);
         values.push(JSON_FIELDS.has(key) ? JSON.stringify(value) : value);
         idx++;

@@ -1,6 +1,8 @@
 import { pool } from '../../config/database';
 import type { Project } from '@clawdblox/memoryweave-shared';
 
+const ALLOWED_COLUMNS = new Set(['name', 'api_key_hash', 'api_key_prefix', 'previous_api_key_hash', 'key_rotation_expires_at', 'groq_key_encrypted', 'player_signing_secret', 'settings']);
+
 export const projectRepository = {
   async findById(id: string): Promise<Project | null> {
     const result = await pool.query('SELECT * FROM projects WHERE id = $1', [id]);
@@ -44,6 +46,7 @@ export const projectRepository = {
 
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined) {
+        if (!ALLOWED_COLUMNS.has(key)) throw new Error(`Invalid column: ${key}`);
         fields.push(`${key} = $${idx}`);
         values.push(key === 'settings' ? JSON.stringify(value) : value);
         idx++;

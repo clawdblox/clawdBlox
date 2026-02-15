@@ -104,14 +104,16 @@ Respond with ONLY valid JSON (no markdown, no explanation):
 }`;
 
     let fullResponse = '';
+    const aiTimeout = AbortSignal.timeout(30_000);
     for await (const token of provider.chat([
       { role: 'system', content: 'You are a creative NPC character designer. Respond ONLY with valid JSON.' },
       { role: 'user', content: prompt },
     ], { temperature: 0.8, max_tokens: 2000 })) {
+      if (aiTimeout.aborted) throw new Error('AI response timeout');
       fullResponse += token;
     }
 
-    const jsonMatch = fullResponse.match(/\{[\s\S]*?\}/);
+    const jsonMatch = fullResponse.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new ValidationError('AI did not return valid JSON');
 
     let generated: Record<string, unknown>;
