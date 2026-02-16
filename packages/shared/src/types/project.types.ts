@@ -14,6 +14,7 @@ export interface Project {
   previous_api_key_hash: string | null;
   key_rotation_expires_at: Date | null;
   groq_key_encrypted: string | null;
+  api_key_encrypted: string | null;
   player_signing_secret: string;
   settings: ProjectSettings;
   created_at: Date;

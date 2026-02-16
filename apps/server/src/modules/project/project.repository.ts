@@ -1,7 +1,7 @@
 import { pool } from '../../config/database';
 import type { Project } from '@clawdblox/memoryweave-shared';
 
-const ALLOWED_COLUMNS = new Set(['name', 'api_key_hash', 'api_key_prefix', 'previous_api_key_hash', 'key_rotation_expires_at', 'groq_key_encrypted', 'player_signing_secret', 'settings']);
+const ALLOWED_COLUMNS = new Set(['name', 'api_key_hash', 'api_key_prefix', 'previous_api_key_hash', 'key_rotation_expires_at', 'groq_key_encrypted', 'api_key_encrypted', 'player_signing_secret', 'settings']);
 
 export const projectRepository = {
   async findById(id: string): Promise<Project | null> {
@@ -20,12 +20,13 @@ export const projectRepository = {
     api_key_prefix: string;
     player_signing_secret: string;
     groq_key_encrypted?: string;
+    api_key_encrypted?: string;
     settings?: Record<string, unknown>;
   }): Promise<Project> {
     const result = await pool.query(
-      `INSERT INTO projects (name, api_key_hash, api_key_prefix, player_signing_secret, groq_key_encrypted, settings)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [data.name, data.api_key_hash, data.api_key_prefix, data.player_signing_secret, data.groq_key_encrypted || null, JSON.stringify(data.settings || {})],
+      `INSERT INTO projects (name, api_key_hash, api_key_prefix, player_signing_secret, groq_key_encrypted, api_key_encrypted, settings)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [data.name, data.api_key_hash, data.api_key_prefix, data.player_signing_secret, data.groq_key_encrypted || null, data.api_key_encrypted || null, JSON.stringify(data.settings || {})],
     );
     return result.rows[0];
   },
@@ -37,6 +38,7 @@ export const projectRepository = {
     previous_api_key_hash: string | null;
     key_rotation_expires_at: Date | null;
     groq_key_encrypted: string | null;
+    api_key_encrypted: string | null;
     player_signing_secret: string;
     settings: Record<string, unknown>;
   }>): Promise<Project | null> {

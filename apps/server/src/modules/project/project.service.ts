@@ -6,10 +6,11 @@ import { NotFoundError } from '../../utils/errors';
 import type { Project } from '@clawdblox/memoryweave-shared';
 
 function toSafe(project: Project) {
-  const { api_key_hash, groq_key_encrypted, player_signing_secret, ...safe } = project;
+  const { api_key_hash, groq_key_encrypted, player_signing_secret, api_key_encrypted, ...safe } = project;
   return {
     ...safe,
     has_groq_key: !!groq_key_encrypted,
+    ...(api_key_encrypted ? { api_key: decrypt(api_key_encrypted) } : {}),
   };
 }
 
@@ -50,6 +51,7 @@ export const projectService = {
       key_rotation_expires_at: rotationExpiry,
       api_key_hash: hash,
       api_key_prefix: prefix,
+      api_key_encrypted: encrypt(key),
     });
 
     return { apiKey: key };

@@ -6,6 +6,7 @@ import { generateTokenPair, verifyRefreshToken } from '../../utils/jwt';
 import { generateApiKey, hashApiKey } from '../../utils/api-key';
 import { redis } from '../../config/database';
 import type { TokenPair, UserPublic, User } from '@clawdblox/memoryweave-shared';
+import { encrypt, decrypt } from '../../utils/crypto';
 import { ConflictError, AuthError, NotFoundError, ForbiddenError } from '../../utils/errors';
 
 const BCRYPT_ROUNDS = 12;
@@ -45,6 +46,7 @@ export const userService = {
       api_key_hash: apiKeyHash,
       api_key_prefix: prefix,
       player_signing_secret: signingSecret,
+      api_key_encrypted: encrypt(key),
     });
 
     const passwordHash = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
@@ -66,7 +68,7 @@ export const userService = {
     return { user: toPublic(user), apiKey: key, tokens };
   },
 
-  async login(email: string, password: string): Promise<{ user: UserPublic; tokens: TokenPair }> {
+  async login(email: string, password: string): Promise<{ user: UserPublic; apiKey?: string; tokens: TokenPair }> {
     const user = await userRepository.findByEmail(email);
 
     const valid = await bcrypt.compare(password, user?.password_hash || DUMMY_HASH);
@@ -83,7 +85,13 @@ export const userService = {
       project_id: user.project_id,
     });
 
-    return { user: toPublic(user), tokens };
+    let apiKey: string | undefined;
+    const project = await projectRepository.findById(user.project_id);
+    if (project?.api_key_encrypted) {
+      apiKey = decrypt(project.api_key_encrypted);
+    }
+
+    return { user: toPublic(user), apiKey, tokens };
   },
 
   async refresh(refreshToken: string): Promise<TokenPair> {

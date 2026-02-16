@@ -51,7 +51,7 @@ userController.post('/api/auth/login', loginRateLimit, async (req, res, next) =>
     const result = await userService.login(body.data.email, body.data.password);
     setAuthCookies(res, result.tokens);
 
-    res.json({ user: result.user });
+    res.json({ user: result.user, ...(result.apiKey && { api_key: result.apiKey }) });
   } catch (err) { next(err); }
 });
 
