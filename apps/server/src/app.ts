@@ -13,6 +13,7 @@ import { conversationController } from './modules/conversation/conversation.cont
 import { lifeController } from './modules/life/life.controller';
 import { statsController } from './modules/project/stats.controller';
 import { channelBindingController } from './modules/npc/channel-binding.controller';
+import { playerController } from './modules/player/player.controller';
 
 function getCorsOrigin(): cors.CorsOptions['origin'] {
   if (env.NODE_ENV === 'production' && env.CORS_ORIGIN === '*') {
@@ -60,6 +61,7 @@ export function createApp(): express.Express {
   app.use('/api/v1', lifeController);
   app.use('/api/v1', statsController);
   app.use('/api/v1', channelBindingController);
+  app.use('/api/v1', playerController);
 
   app.use((_req, res) => {
     res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Route not found' } });

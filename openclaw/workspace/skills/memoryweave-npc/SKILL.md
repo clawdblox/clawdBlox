@@ -14,9 +14,34 @@ This skill is activated in NPC channels (Discord or Telegram). When a user sends
 
 ## Steps
 
+### 0. Check for utility commands
+
+Before any NPC routing, check if the message is a utility command:
+
+- `/link` → See "Player Identity Commands" section below
+- `/unlink` → See "Player Identity Commands" section below
+- `/whoami` → See "Player Identity Commands" section below
+
+If the message matches one of these, handle it and stop. Do NOT pass utility commands to NPCs.
+
 ### 1. Resolve the bound NPC
 
-Extract the channel ID and platform (discord or telegram) from the incoming message context, then resolve which NPC is bound:
+Extract the channel ID and platform (discord or telegram) from the incoming message context.
+
+**Multi-NPC routing (Telegram with `npcRouting: "slash-command"`):**
+
+If the channel config has `npcRouting: "slash-command"`, messages MUST start with `/npcname` to be routed:
+1. Parse the message: if it starts with `/`, extract `npc_name` (the word after `/`) and the rest as `message`
+   - `/elena Bonjour!` → npc_name=`elena`, message=`Bonjour!`
+   - Message without `/` prefix → ignore entirely (do not respond)
+2. List available NPCs: `exec mw list-channel-npcs <platform> <channel_id>`
+3. Match `npc_name` against the `name` field (case-insensitive)
+4. If no match → reply with: "Unknown NPC. Available NPCs: elena, marcus" (list the actual names)
+5. Use the matched `npc_id` for the chat call
+
+**Single-NPC routing (default — Discord and Telegram without `npcRouting`):**
+
+Resolve which NPC is bound to this channel:
 ```
 exec mw resolve-channel <platform> <channel_id>
 ```
@@ -47,6 +72,26 @@ Check the response length against the platform limit:
 If the message exceeds the limit, split at sentence boundaries (`. ` or `\n\n`) to maintain readability. Each chunk must be within the platform's character limit. Send each chunk as a separate message with a short delay. Only as a last resort (no suitable split point found), truncate and append "...".
 
 Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes.
+
+## Player Identity Commands
+
+These commands allow players to link their identities across platforms (Roblox, Discord, Telegram).
+
+### `/link`
+1. Call: `exec mw request-link-code <platform> <sender_user_id>`
+2. Extract `code` and `expires_in` from the response
+3. Reply with: "Your link code: **<CODE>**. Enter it in Roblox within the next 5 minutes."
+
+### `/unlink`
+1. Call: `exec mw unlink-player <platform> <sender_user_id>`
+2. On success: reply with "Your account has been unlinked from the cross-platform identity."
+3. On error (404): reply with "No linked identity found for your account."
+
+### `/whoami`
+1. Call: `exec mw resolve-player <platform> <sender_user_id>`
+2. On success: extract `display_name` and `links` array, reply with:
+   "Identity: **<display_name>** — Linked platforms: discord, telegram, roblox" (list actual linked platforms)
+3. On error (404): reply with "No cross-platform identity found. Use /link to create one."
 
 ## Critical Rules
 

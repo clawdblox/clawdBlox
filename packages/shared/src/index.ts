@@ -21,5 +21,6 @@ export * from './schemas/conversation.schema';
 export * from './schemas/life.schema';
 export * from './schemas/memory.schema';
 export * from './schemas/npc.schema';
+export * from './schemas/player.schema';
 export * from './schemas/project.schema';
 export * from './schemas/user.schema';

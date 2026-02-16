@@ -87,12 +87,22 @@
         // Group allowlist — only respond in these group chats
         // Replace GROUP_ID with your Telegram group/supergroup chat ID (negative number)
         //
+        // --- Single-NPC group (default) ---
         // "GROUP_ID": {
         //   "slug": "my-game-group",
         //   "requireMention": true,       // Only respond when @mentioned in groups
         //   "replyBehavior": "reply-to",   // "reply-to" | "standalone"
         //   "allowFrom": [],               // Restrict to specific user IDs (empty = all group members)
-        //   "skills": ["memoryweave-admin"]
+        //   "skills": ["memoryweave-npc"]
+        // }
+        //
+        // --- Multi-NPC group (use /npcname to address NPCs) ---
+        // "GROUP_ID": {
+        //   "slug": "rp-group",
+        //   "requireMention": false,
+        //   "replyBehavior": "reply-to",
+        //   "skills": ["memoryweave-npc"],
+        //   "npcRouting": "slash-command"  // Enables /npcname routing
         // }
       }
     }

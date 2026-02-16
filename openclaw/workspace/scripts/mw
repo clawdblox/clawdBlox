@@ -215,9 +215,17 @@ case "$1" in
     echo ""
     echo "Channel Bindings:"
     echo "  bind-channel <npc_id> <platform> <ch_id> Bind NPC to a channel"
-    echo "  unbind-channel <platform> <ch_id>        Unbind a channel"
+    echo "  unbind-channel <platform> <ch_id> [npc_id]  Unbind a channel (or specific NPC)"
     echo "  list-bindings                            List all channel bindings"
+    echo "  list-channel-npcs <platform> <ch_id>     List NPCs bound to a channel"
     echo "  resolve-channel <platform> <ch_id>       Resolve channel to NPC"
+    echo ""
+    echo "Players:"
+    echo "  request-link-code <platform> <user_id>   Request a cross-platform link code"
+    echo "  verify-link <code> <platform> <user_id>  Verify and link platforms"
+    echo "  resolve-player <platform> <user_id>      Resolve player identity"
+    echo "  list-player-links <player_id>            List player linked platforms"
+    echo "  unlink-player <platform> <user_id>       Unlink a platform"
     echo ""
     echo "Project:"
     echo "  stats                                    Get project statistics"
@@ -407,12 +415,23 @@ case "$1" in
     request POST "/channels/bind" "{\"npc_id\":\"$2\",\"platform\":\"$3\",\"platform_channel_id\":\"$4\"}"
     ;;
   unbind-channel)
-    require_arg "$2" "mw unbind-channel <platform> <channel_id>"
-    require_arg "$3" "mw unbind-channel <platform> <channel_id>"
-    request DELETE "/channels/bind" "{\"platform\":\"$2\",\"platform_channel_id\":\"$3\"}"
+    require_arg "$2" "mw unbind-channel <platform> <channel_id> [npc_id]"
+    require_arg "$3" "mw unbind-channel <platform> <channel_id> [npc_id]"
+    if [ -n "$4" ]; then
+      request DELETE "/channels/bind" "{\"platform\":\"$2\",\"platform_channel_id\":\"$3\",\"npc_id\":\"$4\"}"
+    else
+      request DELETE "/channels/bind" "{\"platform\":\"$2\",\"platform_channel_id\":\"$3\"}"
+    fi
     ;;
   list-bindings)
     request GET "/channels/bindings"
+    ;;
+  list-channel-npcs)
+    require_arg "$2" "mw list-channel-npcs <platform> <channel_id>"
+    require_arg "$3" "mw list-channel-npcs <platform> <channel_id>"
+    platform=$(urlencode "$2")
+    channel_id=$(urlencode "$3")
+    request GET "/channels/npcs?platform=${platform}&platform_channel_id=${channel_id}"
     ;;
   resolve-channel)
     require_arg "$2" "mw resolve-channel <platform> <channel_id>"
@@ -420,6 +439,35 @@ case "$1" in
     platform=$(urlencode "$2")
     channel_id=$(urlencode "$3")
     request GET "/channels/resolve?platform=${platform}&platform_channel_id=${channel_id}"
+    ;;
+
+  # === Players ===
+  request-link-code)
+    require_arg "$2" "mw request-link-code <platform> <platform_user_id>"
+    require_arg "$3" "mw request-link-code <platform> <platform_user_id>"
+    request POST "/players/request-code" "{\"platform\":\"$2\",\"platform_user_id\":\"$3\"}"
+    ;;
+  verify-link)
+    require_arg "$2" "mw verify-link <code> <platform> <platform_user_id>"
+    require_arg "$3" "mw verify-link <code> <platform> <platform_user_id>"
+    require_arg "$4" "mw verify-link <code> <platform> <platform_user_id>"
+    request POST "/players/verify-link" "{\"code\":\"$2\",\"platform\":\"$3\",\"platform_user_id\":\"$4\"}"
+    ;;
+  resolve-player)
+    require_arg "$2" "mw resolve-player <platform> <platform_user_id>"
+    require_arg "$3" "mw resolve-player <platform> <platform_user_id>"
+    platform=$(urlencode "$2")
+    platform_user_id=$(urlencode "$3")
+    request GET "/players/resolve?platform=${platform}&platform_user_id=${platform_user_id}"
+    ;;
+  list-player-links)
+    require_arg "$2" "mw list-player-links <player_id>"
+    request GET "/players/$2/links"
+    ;;
+  unlink-player)
+    require_arg "$2" "mw unlink-player <platform> <platform_user_id>"
+    require_arg "$3" "mw unlink-player <platform> <platform_user_id>"
+    request DELETE "/players/unlink" "{\"platform\":\"$2\",\"platform_user_id\":\"$3\"}"
     ;;
 
   # === Project ===

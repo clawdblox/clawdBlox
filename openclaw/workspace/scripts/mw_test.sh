@@ -540,6 +540,53 @@ run_mw list-bindings
 curl_args=$(get_curl_log)
 assert_contains "list-bindings URL" "$curl_args" "/channels/bindings"
 
+# ── 15b. Multi-NPC Channel Bindings ─────────────────────────────
+
+section "15b. Multi-NPC channel bindings"
+
+# list-channel-npcs
+configure_mock 0 200 '{"npcs":[{"npc_id":"npc1","name":"Elena"},{"npc_id":"npc2","name":"Marcus"}]}'
+run_mw list-channel-npcs telegram -1001234567890
+curl_args=$(get_curl_log)
+assert_contains "list-channel-npcs method" "$curl_args" "-X GET"
+assert_contains "list-channel-npcs URL" "$curl_args" "/channels/npcs"
+assert_contains "list-channel-npcs platform param" "$curl_args" "platform=telegram"
+assert_contains "list-channel-npcs channel param" "$curl_args" "platform_channel_id=-1001234567890"
+assert_exit_code "list-channel-npcs exits 0" 0
+
+# list-channel-npcs missing args
+run_mw list-channel-npcs
+assert_exit_code "list-channel-npcs missing platform exits 1" 1
+run_mw list-channel-npcs telegram
+assert_exit_code "list-channel-npcs missing channel exits 1" 1
+
+# unbind-channel with npc_id (specific NPC)
+configure_mock 0 200 '{"unbound":true}'
+run_mw unbind-channel telegram -1001234567890 npc1-uuid
+curl_args=$(get_curl_log)
+assert_contains "unbind with npc_id method" "$curl_args" "-X DELETE"
+assert_contains "unbind with npc_id body platform" "$curl_args" '"platform":"telegram"'
+assert_contains "unbind with npc_id body channel" "$curl_args" '"platform_channel_id":"-1001234567890"'
+assert_contains "unbind with npc_id body npc_id" "$curl_args" '"npc_id":"npc1-uuid"'
+assert_exit_code "unbind with npc_id exits 0" 0
+
+# unbind-channel without npc_id (all bindings — backward compat)
+configure_mock 0 200 '{"unbound":true}'
+run_mw unbind-channel telegram -1001234567890
+curl_args=$(get_curl_log)
+assert_contains "unbind all body platform" "$curl_args" '"platform":"telegram"'
+assert_not_contains "unbind all no npc_id" "$curl_args" '"npc_id"'
+assert_exit_code "unbind all exits 0" 0
+
+# Multi-bind: bind 2 NPCs to the same channel
+configure_mock 0 201 '{"binding":{"npc_id":"npc1","platform":"telegram","platform_channel_id":"-100xxx"}}'
+run_mw bind-channel npc1 telegram -100xxx
+assert_exit_code "bind npc1 exits 0" 0
+
+configure_mock 0 201 '{"binding":{"npc_id":"npc2","platform":"telegram","platform_channel_id":"-100xxx"}}'
+run_mw bind-channel npc2 telegram -100xxx
+assert_exit_code "bind npc2 exits 0" 0
+
 # ── 16. Life System (Routines) ───────────────────────────────────
 
 section "16. Life system (routines)"
@@ -591,6 +638,219 @@ configure_mock 0 200 '{"id":"mem1"}'
 run_mw get-memory npc1 mem1
 curl_args=$(get_curl_log)
 assert_contains "get-memory URL" "$curl_args" "/npcs/npc1/memories/mem1"
+
+# ── 18. Discord Workflow Simulation ──────────────────────────────
+
+section "18. Discord workflow simulation"
+
+# Simulate: A user sends a message in Discord channel #tavern
+# Full flow: bind NPC → resolve channel → send message → verify response
+
+# Step 1: Bind NPC "elena" to Discord channel (snowflake ID)
+configure_mock 0 200 '{"npc_id":"elena-001","platform":"discord","platform_channel_id":"1122334455667788"}'
+run_mw bind-channel elena-001 discord 1122334455667788
+curl_args=$(get_curl_log)
+assert_contains "discord bind platform" "$curl_args" '"platform":"discord"'
+assert_contains "discord bind npc_id" "$curl_args" '"npc_id":"elena-001"'
+assert_contains "discord bind channel" "$curl_args" '"platform_channel_id":"1122334455667788"'
+assert_exit_code "discord bind exits 0" 0
+
+# Step 2: Resolve channel — who is the NPC in this channel?
+configure_mock 0 200 '{"npc_id":"elena-001","platform":"discord","platform_channel_id":"1122334455667788"}'
+run_mw resolve-channel discord 1122334455667788
+curl_args=$(get_curl_log)
+assert_contains "discord resolve platform" "$curl_args" "platform=discord"
+assert_contains "discord resolve channel" "$curl_args" "platform_channel_id=1122334455667788"
+assert_contains "discord resolve response" "$LAST_STDOUT" "elena-001"
+assert_exit_code "discord resolve exits 0" 0
+
+# Step 3: Discord user sends a message, NPC responds
+configure_mock 0 200 '{"response":"Ah, welcome traveler! Come sit by the fire. What brings you to my tavern today?","npc_id":"elena-001"}'
+run_mw chat-bot elena-001 discord 998877665544 "Hey Elena, how are you?"
+curl_args=$(get_curl_log)
+assert_contains "discord chat method" "$curl_args" "-X POST"
+assert_contains "discord chat URL" "$curl_args" "/npcs/elena-001/chat/bot"
+assert_contains "discord chat platform" "$curl_args" '"platform":"discord"'
+assert_contains "discord chat user_id" "$curl_args" '"platform_user_id":"998877665544"'
+assert_contains "discord chat message" "$curl_args" "Hey Elena, how are you?"
+assert_contains "discord NPC response" "$LAST_STDOUT" "welcome traveler"
+assert_exit_code "discord chat exits 0" 0
+
+# Step 4: Discord-specific — message with mention and markdown
+configure_mock 0 200 '{"response":"Yes, I saw them earlier!"}'
+run_mw chat-bot elena-001 discord 998877665544 'Hey <@123456>, check **this** out!'
+curl_args=$(get_curl_log)
+assert_contains "discord mention preserved" "$curl_args" "<@123456>"
+assert_contains "discord markdown preserved" "$curl_args" "**this**"
+assert_exit_code "discord mention msg exits 0" 0
+
+# Step 5: Unbind when done
+configure_mock 0 200 '{"unbound":true}'
+run_mw unbind-channel discord 1122334455667788
+curl_args=$(get_curl_log)
+assert_contains "discord unbind platform" "$curl_args" '"platform":"discord"'
+assert_contains "discord unbind channel" "$curl_args" '"platform_channel_id":"1122334455667788"'
+assert_exit_code "discord unbind exits 0" 0
+
+# ── 19. Telegram Workflow Simulation ─────────────────────────────
+
+section "19. Telegram workflow simulation"
+
+# Simulate: A user sends a message in a Telegram group
+# Full flow: bind NPC → resolve group → send message → verify response
+
+# Step 1: Bind NPC to Telegram group (negative group ID)
+configure_mock 0 200 '{"npc_id":"elena-001","platform":"telegram","platform_channel_id":"-1001234567890"}'
+run_mw bind-channel elena-001 telegram -1001234567890
+curl_args=$(get_curl_log)
+assert_contains "telegram bind platform" "$curl_args" '"platform":"telegram"'
+assert_contains "telegram bind negative id" "$curl_args" '"platform_channel_id":"-1001234567890"'
+assert_exit_code "telegram bind exits 0" 0
+
+# Step 2: Resolve group — negative ID should not be URL-encoded (- is unreserved)
+configure_mock 0 200 '{"npc_id":"elena-001","platform":"telegram","platform_channel_id":"-1001234567890"}'
+run_mw resolve-channel telegram -1001234567890
+curl_args=$(get_curl_log)
+assert_contains "telegram resolve platform" "$curl_args" "platform=telegram"
+assert_contains "telegram resolve negative id" "$curl_args" "platform_channel_id=-1001234567890"
+assert_contains "telegram resolve response" "$LAST_STDOUT" "elena-001"
+assert_exit_code "telegram resolve exits 0" 0
+
+# Step 3: Telegram user sends a message, NPC responds
+configure_mock 0 200 '{"response":"Bonjour ! Je suis Elena, la taverniere. Que puis-je faire pour vous ?","npc_id":"elena-001"}'
+run_mw chat-bot elena-001 telegram 112233 "Bonjour depuis Telegram!"
+curl_args=$(get_curl_log)
+assert_contains "telegram chat method" "$curl_args" "-X POST"
+assert_contains "telegram chat URL" "$curl_args" "/npcs/elena-001/chat/bot"
+assert_contains "telegram chat platform" "$curl_args" '"platform":"telegram"'
+assert_contains "telegram chat user_id" "$curl_args" '"platform_user_id":"112233"'
+assert_contains "telegram chat message" "$curl_args" "Bonjour depuis Telegram!"
+assert_contains "telegram NPC response" "$LAST_STDOUT" "taverniere"
+assert_exit_code "telegram chat exits 0" 0
+
+# Step 4: Telegram — message with emoji and unicode
+configure_mock 0 200 '{"response":"I love games too!"}'
+run_mw chat-bot elena-001 telegram 112233 'Let us play a game! 🎮'
+curl_args=$(get_curl_log)
+assert_contains "telegram emoji preserved" "$curl_args" '🎮'
+assert_exit_code "telegram emoji msg exits 0" 0
+
+# Step 5: Unbind when done
+configure_mock 0 200 '{"unbound":true}'
+run_mw unbind-channel telegram -1001234567890
+curl_args=$(get_curl_log)
+assert_contains "telegram unbind platform" "$curl_args" '"platform":"telegram"'
+assert_contains "telegram unbind negative id" "$curl_args" '"platform_channel_id":"-1001234567890"'
+assert_exit_code "telegram unbind exits 0" 0
+
+# ── 20. Cross-Platform Comparison ────────────────────────────────
+
+section "20. Cross-platform comparison"
+
+# Same NPC, same message, two platforms — verify platform isolation
+
+configure_mock 0 200 '{"response":"Discord reply"}'
+run_mw chat-bot npc1 discord 111 "Hello world"
+curl_args_discord=$(get_curl_log)
+
+configure_mock 0 200 '{"response":"Telegram reply"}'
+run_mw chat-bot npc1 telegram 222 "Hello world"
+curl_args_telegram=$(get_curl_log)
+
+# Verify each platform is correctly tagged
+assert_contains "cross-platform discord" "$curl_args_discord" '"platform":"discord"'
+assert_contains "cross-platform telegram" "$curl_args_telegram" '"platform":"telegram"'
+
+# Verify different user IDs
+assert_contains "cross-platform discord uid" "$curl_args_discord" '"platform_user_id":"111"'
+assert_contains "cross-platform telegram uid" "$curl_args_telegram" '"platform_user_id":"222"'
+
+# Verify both use same endpoint pattern
+assert_contains "cross-platform discord URL" "$curl_args_discord" "/npcs/npc1/chat/bot"
+assert_contains "cross-platform telegram URL" "$curl_args_telegram" "/npcs/npc1/chat/bot"
+
+# ── 21. Player Commands ──────────────────────────────────────────────
+
+section "21. Player commands"
+
+# request-link-code
+configure_mock 0 200 '{"code":"A3X7K2","expires_in":300}'
+run_mw request-link-code telegram 12345
+curl_args=$(get_curl_log)
+assert_contains "request-link-code method" "$curl_args" "-X POST"
+assert_contains "request-link-code URL" "$curl_args" "/players/request-code"
+assert_contains "request-link-code platform" "$curl_args" '"platform":"telegram"'
+assert_contains "request-link-code user_id" "$curl_args" '"platform_user_id":"12345"'
+assert_exit_code "request-link-code exits 0" 0
+
+# request-link-code missing args
+run_mw request-link-code
+assert_exit_code "request-link-code missing platform exits 1" 1
+run_mw request-link-code telegram
+assert_exit_code "request-link-code missing user_id exits 1" 1
+
+# verify-link
+configure_mock 0 200 '{"player_id":"uuid-123","linked_platforms":["telegram","roblox"]}'
+run_mw verify-link A3X7K2 roblox 67890
+curl_args=$(get_curl_log)
+assert_contains "verify-link method" "$curl_args" "-X POST"
+assert_contains "verify-link URL" "$curl_args" "/players/verify-link"
+assert_contains "verify-link code" "$curl_args" '"code":"A3X7K2"'
+assert_contains "verify-link platform" "$curl_args" '"platform":"roblox"'
+assert_contains "verify-link user_id" "$curl_args" '"platform_user_id":"67890"'
+assert_exit_code "verify-link exits 0" 0
+
+# verify-link missing args
+run_mw verify-link
+assert_exit_code "verify-link missing code exits 1" 1
+run_mw verify-link A3X7K2
+assert_exit_code "verify-link missing platform exits 1" 1
+run_mw verify-link A3X7K2 roblox
+assert_exit_code "verify-link missing user_id exits 1" 1
+
+# resolve-player
+configure_mock 0 200 '{"player_id":"uuid-123","display_name":null,"links":[{"platform":"telegram","platform_user_id":"12345"}]}'
+run_mw resolve-player telegram 12345
+curl_args=$(get_curl_log)
+assert_contains "resolve-player method" "$curl_args" "-X GET"
+assert_contains "resolve-player URL" "$curl_args" "/players/resolve"
+assert_contains "resolve-player platform param" "$curl_args" "platform=telegram"
+assert_contains "resolve-player user_id param" "$curl_args" "platform_user_id=12345"
+assert_exit_code "resolve-player exits 0" 0
+
+# resolve-player missing args
+run_mw resolve-player
+assert_exit_code "resolve-player missing platform exits 1" 1
+run_mw resolve-player telegram
+assert_exit_code "resolve-player missing user_id exits 1" 1
+
+# list-player-links
+configure_mock 0 200 '{"links":[{"platform":"telegram","platform_user_id":"12345"}]}'
+run_mw list-player-links uuid-123
+curl_args=$(get_curl_log)
+assert_contains "list-player-links method" "$curl_args" "-X GET"
+assert_contains "list-player-links URL" "$curl_args" "/players/uuid-123/links"
+assert_exit_code "list-player-links exits 0" 0
+
+# list-player-links missing args
+run_mw list-player-links
+assert_exit_code "list-player-links missing id exits 1" 1
+
+# unlink-player
+configure_mock 0 200 '{"unlinked":true}'
+run_mw unlink-player telegram 12345
+curl_args=$(get_curl_log)
+assert_contains "unlink-player method" "$curl_args" "-X DELETE"
+assert_contains "unlink-player URL" "$curl_args" "/players/unlink"
+assert_contains "unlink-player platform" "$curl_args" '"platform":"telegram"'
+assert_contains "unlink-player user_id" "$curl_args" '"platform_user_id":"12345"'
+assert_exit_code "unlink-player exits 0" 0
+
+# unlink-player missing args
+run_mw unlink-player
+assert_exit_code "unlink-player missing platform exits 1" 1
+run_mw unlink-player telegram
+assert_exit_code "unlink-player missing user_id exits 1" 1
 
 # ─── Summary ────────────────────────────────────────────────────────
 

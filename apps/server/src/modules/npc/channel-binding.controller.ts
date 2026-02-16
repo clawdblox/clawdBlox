@@ -3,7 +3,7 @@ import { channelBindingRepository } from './channel-binding.repository';
 import { npcRepository } from './npc.repository';
 import { apiKeyMiddleware } from '../../middleware/apiKey.middleware';
 import { apiRateLimit } from '../../middleware/rateLimit.middleware';
-import { bindChannelSchema, unbindChannelSchema, resolveChannelQuery } from '@clawdblox/memoryweave-shared';
+import { bindChannelSchema, unbindChannelSchema, resolveChannelQuery, listChannelNpcsQuery } from '@clawdblox/memoryweave-shared';
 import { ValidationError, NotFoundError } from '../../utils/errors';
 
 export const channelBindingController = Router();
@@ -30,7 +30,7 @@ channelBindingController.delete('/channels/bind', async (req, res, next) => {
     const body = unbindChannelSchema.safeParse(req.body);
     if (!body.success) throw new ValidationError('Invalid input', body.error.format());
 
-    const deleted = await channelBindingRepository.unbind(req.projectId!, body.data.platform, body.data.platform_channel_id);
+    const deleted = await channelBindingRepository.unbind(req.projectId!, body.data.platform, body.data.platform_channel_id, body.data.npc_id);
     if (!deleted) throw new NotFoundError('Binding not found');
 
     res.status(204).send();
@@ -41,6 +41,16 @@ channelBindingController.get('/channels/bindings', async (req, res, next) => {
   try {
     const bindings = await channelBindingRepository.findByProject(req.projectId!);
     res.json({ bindings });
+  } catch (err) { next(err); }
+});
+
+channelBindingController.get('/channels/npcs', async (req, res, next) => {
+  try {
+    const query = listChannelNpcsQuery.safeParse(req.query);
+    if (!query.success) throw new ValidationError('Invalid query', query.error.format());
+
+    const npcs = await channelBindingRepository.findAllByChannel(req.projectId!, query.data.platform, query.data.platform_channel_id);
+    res.json({ npcs: npcs.map(b => ({ npc_id: b.npc_id, name: b.npc_name, platform: b.platform, platform_channel_id: b.platform_channel_id })) });
   } catch (err) { next(err); }
 });
 
