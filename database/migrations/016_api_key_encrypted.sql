@@ -1,1 +1,1 @@
-ALTER TABLE projects ADD COLUMN api_key_encrypted TEXT;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS api_key_encrypted TEXT;
