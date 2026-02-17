@@ -68,6 +68,7 @@ export const npcService = {
 
   async generate(projectId: string, data: {
     description: string;
+    name?: string;
     traits?: Partial<OceanPersonality>;
     setting?: string;
   }): Promise<NPC> {
@@ -134,6 +135,10 @@ Respond with ONLY valid JSON matching this exact structure:
 
     if (data.traits) {
       generated.personality = { ...generated.personality, ...data.traits };
+    }
+
+    if (data.name) {
+      generated.name = data.name;
     }
 
     return this.create(projectId, generated as unknown as Parameters<typeof this.create>[1]);

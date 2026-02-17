@@ -58,6 +58,7 @@ export interface UpdateNPCInput {
 
 export interface GenerateNPCInput {
   description: string;
+  name?: string;
   traits?: Partial<Record<OceanTrait, number>>;
   setting?: string;
 }

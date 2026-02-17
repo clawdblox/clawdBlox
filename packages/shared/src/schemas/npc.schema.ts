@@ -46,6 +46,7 @@ export const updateNpcSchema = z.object({
 
 export const generateNpcSchema = z.object({
   description: z.string().min(10).max(1000),
+  name: z.string().trim().min(1).max(100).optional(),
   traits: oceanPersonalitySchema.partial().optional(),
   setting: z.string().max(500).optional(),
 });
