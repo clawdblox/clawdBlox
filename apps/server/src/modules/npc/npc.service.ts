@@ -81,34 +81,34 @@ export const npcService = {
 ${data.setting ? `Setting: ${data.setting}` : ''}
 ${data.traits ? `Personality hints: ${JSON.stringify(data.traits)}` : ''}
 
-Respond with ONLY valid JSON (no markdown, no explanation):
+Respond with ONLY valid JSON matching this exact structure:
 {
-  "name": "character name",
+  "name": "Shadow Vex",
   "personality": {
-    "openness": 0.0-1.0,
-    "conscientiousness": 0.0-1.0,
-    "extraversion": 0.0-1.0,
-    "agreeableness": 0.0-1.0,
-    "neuroticism": 0.0-1.0
+    "openness": 0.72,
+    "conscientiousness": 0.35,
+    "extraversion": 0.48,
+    "agreeableness": 0.29,
+    "neuroticism": 0.61
   },
   "speaking_style": {
-    "vocabulary_level": "simple|moderate|advanced|archaic",
-    "formality": "casual|neutral|formal",
-    "humor": "none|subtle|frequent|sarcastic",
-    "verbosity": "terse|concise|normal|verbose",
-    "quirks": ["quirk1"],
-    "catchphrases": ["phrase1"]
+    "vocabulary_level": "moderate",
+    "formality": "casual",
+    "humor": "sarcastic",
+    "verbosity": "concise",
+    "quirks": ["uses thieves cant expressions"],
+    "catchphrases": ["nothing personal"]
   },
-  "backstory": "2-3 paragraph backstory",
-  "mood": "current mood"
+  "backstory": "2-3 paragraph backstory here",
+  "mood": "cautious"
 }`;
 
     let fullResponse = '';
     const aiTimeout = AbortSignal.timeout(30_000);
     for await (const token of provider.chat([
-      { role: 'system', content: 'You are a creative NPC character designer. Respond ONLY with valid JSON.' },
+      { role: 'system', content: 'You are a creative NPC character designer. Respond with a single JSON object, no markdown fences, no explanation.' },
       { role: 'user', content: prompt },
-    ], { temperature: 0.8, max_tokens: 2000 })) {
+    ], { json: true, temperature: 0.8, max_tokens: 2000 })) {
       if (aiTimeout.aborted) throw new Error('AI response timeout');
       fullResponse += token;
     }
@@ -116,10 +116,15 @@ Respond with ONLY valid JSON (no markdown, no explanation):
     const jsonMatch = fullResponse.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new ValidationError('AI did not return valid JSON');
 
+    // Clean common LLM artifacts
+    let raw = jsonMatch[0];
+    raw = raw.replace(/,\s*([}\]])/g, '$1'); // trailing commas
+
     let generated: Record<string, unknown>;
     try {
-      generated = JSON.parse(jsonMatch[0]);
-    } catch {
+      generated = JSON.parse(raw);
+    } catch (err) {
+      console.error('[npc.service] Failed to parse AI JSON response:', fullResponse);
       throw new ValidationError('AI returned malformed JSON');
     }
 

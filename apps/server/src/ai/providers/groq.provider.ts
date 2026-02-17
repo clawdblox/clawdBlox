@@ -25,6 +25,7 @@ export class GroqProvider implements AIProvider {
       temperature: options?.temperature ?? 0.7,
       max_tokens: options?.max_tokens ?? 1024,
       stop: options?.stop,
+      response_format: options?.json ? { type: 'json_object' } : undefined,
       stream: true,
     });
 

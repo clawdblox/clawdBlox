@@ -8,6 +8,7 @@ export interface ChatOptions {
   temperature?: number;
   max_tokens?: number;
   stop?: string[];
+  json?: boolean;
 }
 
 export interface EmbedOptions {
