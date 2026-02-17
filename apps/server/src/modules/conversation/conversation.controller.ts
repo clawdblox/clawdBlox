@@ -59,8 +59,8 @@ conversationController.post(
   '/npcs/:id/chat',
   apiKeyMiddleware,
   apiRateLimit,
-  sanitizeMiddleware,
   playerAuthMiddleware,
+  sanitizeMiddleware,
   async (req, res, next) => {
     try {
       const body = chatMessageSchema.safeParse(req.body);
