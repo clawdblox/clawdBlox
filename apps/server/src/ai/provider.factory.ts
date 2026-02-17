@@ -20,9 +20,6 @@ export class AIProviderFactory {
     }
 
     const openaiKey = env.OPENAI_API_KEY;
-    if (!openaiKey) {
-      throw new ValidationError('No OpenAI API key configured. Set OPENAI_API_KEY for embeddings.');
-    }
 
     const chatModel = project.settings?.groq_chat_model || env.GROQ_CHAT_MODEL;
     const embedModel = project.settings?.groq_embed_model || env.GROQ_EMBED_MODEL;

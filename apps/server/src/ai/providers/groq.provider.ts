@@ -11,9 +11,11 @@ export class GroqProvider implements AIProvider {
   private readonly chatModel: string;
   private readonly embedModel: string;
 
-  constructor(apiKey: string, chatModel: string, embedModel: string, openaiApiKey: string) {
+  constructor(apiKey: string, chatModel: string, embedModel: string, openaiApiKey?: string) {
     this.client = new Groq({ apiKey, timeout: API_TIMEOUT_MS });
-    this.embedClient = new OpenAI({ apiKey: openaiApiKey, timeout: API_TIMEOUT_MS });
+    this.embedClient = openaiApiKey
+      ? new OpenAI({ apiKey: openaiApiKey, timeout: API_TIMEOUT_MS })
+      : (undefined as unknown as OpenAI);
     this.chatModel = chatModel;
     this.embedModel = embedModel;
   }
@@ -38,6 +40,9 @@ export class GroqProvider implements AIProvider {
   }
 
   async embed(text: string, options?: EmbedOptions): Promise<number[]> {
+    if (!this.embedClient) {
+      throw new Error('No OpenAI API key configured. Set OPENAI_API_KEY for embeddings.');
+    }
     try {
       const response = await this.embedClient.embeddings.create({
         model: options?.model || this.embedModel,
