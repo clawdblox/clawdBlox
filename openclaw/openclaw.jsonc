@@ -19,12 +19,13 @@
 
   // === Channels ===
   "channels": {
-    // Discord disabled — no bot token configured
-    // Uncomment and configure when ready to use Discord
-    // "discord": { "enabled": true, ... },
+    "defaults": {
+      "requireMention": false
+    },
 
     "telegram": {
       "enabled": true,
+      "requireMention": false,
       "dmPolicy": "open",
       "groups": {
         "*": {
