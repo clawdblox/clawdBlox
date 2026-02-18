@@ -8,7 +8,7 @@
   "agents": {
     "defaults": {
       "model": {
-        "primary": "anthropic/claude-haiku-4-5"
+        "primary": "anthropic/claude-sonnet-4-5"
       },
       "maxConcurrent": 4,
       "subagents": {
@@ -50,5 +50,16 @@
     "allowFrom": {
       "*": ["*"]
     }
+  },
+  "tools": {
+    "allow": ["exec", "read"],
+    "exec": {
+      "timeoutSec": 30
+    }
+  },
+  "env": {
+    "MEMORYWEAVE_API_KEY": "${MEMORYWEAVE_API_KEY}",
+    "MEMORYWEAVE_BASE_URL": "${MEMORYWEAVE_BASE_URL}",
+    "PATH": "/root/.openclaw/workspace/scripts:${PATH}"
   }
 }
