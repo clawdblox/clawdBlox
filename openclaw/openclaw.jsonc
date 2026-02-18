@@ -14,7 +14,11 @@
       "primary": "anthropic/claude-sonnet-4-5",
       "fallback": "anthropic/claude-haiku-4-5",
       "onError": "The AI model is temporarily unavailable. Please try again in a moment."
-    },
+    }
+  },
+
+  // === Messages ===
+  "messages": {
     "groupChat": {
       "mentionPatterns": ["^/"]
     }
@@ -22,23 +26,16 @@
 
   // === Channels ===
   "channels": {
-    "defaults": {
-      "requireMention": false
-    },
-
     "telegram": {
       "enabled": true,
-      "requireMention": false,
       "dmPolicy": "open",
-      "groupDefaults": {
-        "requireMention": false,
-        "activation": "always"
-      },
       "groups": {
+        "*": {
+          "requireMention": false
+        },
         "-1003773263458": {
           "groupPolicy": "open",
           "requireMention": false,
-          "activation": "always",
           "replyBehavior": "reply-to",
           "skills": ["memoryweave-npc"],
           "npcRouting": "slash-command",
