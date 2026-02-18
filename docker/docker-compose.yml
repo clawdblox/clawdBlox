@@ -86,6 +86,7 @@ services:
     container_name: memoryweave-openclaw
     volumes:
       - ../openclaw/openclaw.jsonc:/home/node/.openclaw/openclaw.jsonc:ro
+      - ../openclaw/openclaw.json:/home/node/.openclaw/openclaw.json
       - ../openclaw/workspace:/home/node/.openclaw/workspace:ro
     environment:
       MEMORYWEAVE_API_KEY: ${MEMORYWEAVE_API_KEY:?MEMORYWEAVE_API_KEY is required}
