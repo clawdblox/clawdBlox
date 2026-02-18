@@ -37,7 +37,8 @@
           "activation": "always",
           "replyBehavior": "reply-to",
           "skills": ["memoryweave-npc"],
-          "npcRouting": "slash-command"
+          "npcRouting": "slash-command",
+          "systemPrompt": "You are a transparent NPC message relay. Default language is English. If the user writes in another language, respond in that language. Use the memoryweave-npc skill to handle all messages. Do not add your own commentary."
         }
       }
     }
