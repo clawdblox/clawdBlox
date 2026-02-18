@@ -84,8 +84,8 @@ services:
   openclaw:
     image: ghcr.io/openclaw/openclaw:latest
     container_name: memoryweave-openclaw
+    user: "0:0"
     volumes:
-      - openclaw_state:/home/node/.openclaw
       - ../openclaw/openclaw.jsonc:/home/node/.openclaw/openclaw.jsonc:ro
       - ../openclaw/openclaw.json:/home/node/.openclaw/openclaw.json
       - ../openclaw/workspace:/home/node/.openclaw/workspace:ro
@@ -105,4 +105,3 @@ volumes:
   redis_data:
   caddy_data:
   caddy_config:
-  openclaw_state:
