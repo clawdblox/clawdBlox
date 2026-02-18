@@ -34,6 +34,7 @@
         "-1003773263458": {
           "groupPolicy": "open",
           "requireMention": false,
+          "activation": "always",
           "replyBehavior": "reply-to",
           "skills": ["memoryweave-npc"],
           "npcRouting": "slash-command"
@@ -43,10 +44,14 @@
   },
 
   // === Commands ===
-  // Disable native slash commands so /messages pass through to NPC skill
+  // Allow all users to use commands in Telegram groups
   "commands": {
     "native": false,
-    "nativeSkills": false
+    "nativeSkills": false,
+    "allowFrom": {
+      "*": ["*"]
+    },
+    "useAccessGroups": false
   },
 
   // === Rate Limiting (messages per minute) ===
