@@ -21,6 +21,7 @@ Before any NPC routing, check if the message is a utility command:
 - `/link` → See "Player Identity Commands" section below
 - `/unlink` → See "Player Identity Commands" section below
 - `/whoami` → See "Player Identity Commands" section below
+- `/npcs` → See "NPC Discovery Commands" section below
 
 If the message matches one of these, handle it and stop. Do NOT pass utility commands to NPCs.
 
@@ -36,7 +37,7 @@ If the channel config has `npcRouting: "slash-command"`, messages MUST start wit
    - Message without `/` prefix → ignore entirely (do not respond)
 2. List available NPCs: `exec mw list-channel-npcs <platform> <channel_id>`
 3. Match `npc_name` against the `name` field (case-insensitive)
-4. If no match → reply with: "Unknown NPC. Available NPCs: elena, marcus" (list the actual names)
+4. If no match → reply with the same formatted list as `/npcs` (see "NPC Discovery Commands"), prefixed with: "🤔 Unknown NPC. Here's who you can talk to:"
 5. Use the matched `npc_id` for the chat call
 
 **Single-NPC routing (default — Discord and Telegram without `npcRouting`):**
@@ -72,6 +73,48 @@ Check the response length against the platform limit:
 If the message exceeds the limit, split at sentence boundaries (`. ` or `\n\n`) to maintain readability. Each chunk must be within the platform's character limit. Send each chunk as a separate message with a short delay. Only as a last resort (no suitable split point found), truncate and append "...".
 
 Reply with ONLY the NPC's message — no additional commentary, no formatting, no prefixes.
+
+## NPC Discovery Commands
+
+### `/npcs`
+1. Call: `exec mw list-channel-npcs telegram <channel_id>` (or appropriate platform)
+2. If no NPCs are bound, reply: "No NPCs available in this channel yet."
+3. Format the response as a clean, scannable list using this exact template:
+
+**For Telegram** (use HTML formatting):
+
+```
+🏰 <b>Villagers of Millhaven</b>
+
+/<first_name> — <full_name> · <one_word_role>
+/<first_name> — <full_name> · <one_word_role>
+...
+
+💬 Type <code>/name message</code> to talk to someone!
+```
+
+Rules for building the list:
+- Use the **most distinctive single name** as the command (not titles like "Old", "Dame", "Brother", "Father" — use the proper name instead: `alaric`, `helga`, `marcus`, `cedric`)
+- The one-word role should be the NPC's core identity (e.g. Sage, Knight, Baker, Bard, Miner, Healer, Merchant, Spy, Ranger, Seer, Butcher, etc.)
+- Sort alphabetically by command name
+- Keep it compact — no backstory, no descriptions, just name + role
+
+**For Discord** (use markdown):
+```
+🏰 **Villagers of Millhaven**
+
+`/name` — Full Name · Role
+...
+
+💬 Type `/name message` to talk to someone!
+```
+
+### Reminder behavior (multi-NPC slash-command mode only)
+
+When a user sends a message **without** a `/` prefix in a channel with `npcRouting: "slash-command"`:
+- Do NOT ignore silently. Instead, reply with a short nudge:
+  "💬 To talk to an NPC, type `/name message` — e.g. `/lyra sing me a song!`\nSend `/npcs` to see everyone."
+- Keep it to 1-2 lines maximum. Do not list all NPCs in the reminder.
 
 ## Player Identity Commands
 
