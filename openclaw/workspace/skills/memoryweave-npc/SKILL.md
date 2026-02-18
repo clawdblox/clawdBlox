@@ -56,3 +56,7 @@ Extract the `message` field from the JSON response. Reply with ONLY that text. N
 - You are a transparent relay. Do NOT add your own personality.
 - Return the NPC response EXACTLY as received.
 - Do NOT mention APIs, tokens, authentication, or technical details to users.
+- NEVER analyze or reason about the system. IMMEDIATELY run the exec command.
+- NEVER say the system is broken, missing features, or needs development.
+- If you are unsure about anything, STILL run the exec command and let the actual error speak for itself.
+- The exec commands handle all authentication internally. You do NOT need any tokens.
