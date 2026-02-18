@@ -80,8 +80,8 @@
       // Set TELEGRAM_BOT_TOKEN in env or uncomment:
       // "botToken": "${TELEGRAM_BOT_TOKEN}",
 
-      "dmPolicy": "allowlist",
-      "allowFrom": [],  // Add Telegram user IDs of authorized devs
+      "dmPolicy": "open",
+      "allowFrom": [],
 
       "groups": {
         "-1003773263458": {
