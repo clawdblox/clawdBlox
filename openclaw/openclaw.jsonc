@@ -41,6 +41,13 @@
     }
   },
 
+  // === Commands ===
+  // Disable native slash commands so /messages pass through to NPC skill
+  "commands": {
+    "native": false,
+    "nativeSkills": false
+  },
+
   // === Rate Limiting (messages per minute) ===
   "rateLimit": {
     "perUser": {
