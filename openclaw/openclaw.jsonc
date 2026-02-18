@@ -29,6 +29,7 @@
     "telegram": {
       "enabled": true,
       "dmPolicy": "open",
+      "allowFrom": ["*"],
       "groups": {
         "*": {
           "requireMention": false
@@ -36,10 +37,8 @@
         "-1003773263458": {
           "groupPolicy": "open",
           "requireMention": false,
-          "replyBehavior": "reply-to",
           "skills": ["memoryweave-npc"],
-          "npcRouting": "slash-command",
-          "systemPrompt": "You are a transparent NPC message relay. Default language is English. If the user writes in another language, respond in that language. Use the memoryweave-npc skill to handle all messages. Do not add your own commentary."
+          "systemPrompt": "You are a transparent NPC message relay for a multi-NPC channel using slash-command routing. Messages starting with /npcname should be routed to that NPC. Default language is English. If the user writes in another language, respond in that language. Use the memoryweave-npc skill to handle all messages. Do not add your own commentary. Reply to the original message."
         }
       }
     }
