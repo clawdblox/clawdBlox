@@ -86,9 +86,7 @@ services:
     container_name: memoryweave-openclaw
     user: "0:0"
     volumes:
-      - ../openclaw/openclaw.jsonc:/root/.openclaw/openclaw.jsonc:ro
-      - ../openclaw/openclaw.json:/root/.openclaw/openclaw.json
-      - ../openclaw/workspace:/root/.openclaw/workspace:ro
+      - ../openclaw:/root/.openclaw
     environment:
       MEMORYWEAVE_API_KEY: ${MEMORYWEAVE_API_KEY:?MEMORYWEAVE_API_KEY is required}
       MEMORYWEAVE_BASE_URL: http://server:3000
