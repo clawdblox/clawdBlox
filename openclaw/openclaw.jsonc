@@ -14,6 +14,9 @@
       "primary": "anthropic/claude-sonnet-4-5",
       "fallback": "anthropic/claude-haiku-4-5",
       "onError": "The AI model is temporarily unavailable. Please try again in a moment."
+    },
+    "groupChat": {
+      "mentionPatterns": ["^/"]
     }
   },
 
