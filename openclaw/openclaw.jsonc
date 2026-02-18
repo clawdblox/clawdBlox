@@ -27,10 +27,11 @@
       "enabled": true,
       "requireMention": false,
       "dmPolicy": "open",
+      "groupDefaults": {
+        "requireMention": false,
+        "activation": "always"
+      },
       "groups": {
-        "*": {
-          "requireMention": false
-        },
         "-1003773263458": {
           "groupPolicy": "open",
           "requireMention": false,
