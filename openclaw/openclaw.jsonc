@@ -82,6 +82,8 @@
 
       "dmPolicy": "open",
       "allowFrom": [],
+      "requireMention": false,
+      "groupPolicy": "allowlist",
 
       "groups": {
         "-1003773263458": {
