@@ -1,6 +1,6 @@
 {
   "messages": {
-    "ackReactionScope": "group-mentions"
+    "ackReactionScope": "all"
   },
   "agents": {
     "defaults": {
