@@ -76,18 +76,13 @@
     },
 
     "telegram": {
-      "enabled": true,
-      // Set TELEGRAM_BOT_TOKEN in env or uncomment:
-      // "botToken": "${TELEGRAM_BOT_TOKEN}",
-
       "dmPolicy": "open",
-      "allowFrom": [],
-      "requireMention": false,
-      "groupPolicy": "allowlist",
-
       "groups": {
+        "*": {
+          "requireMention": false
+        },
         "-1003773263458": {
-          "slug": "clawdblox-public",
+          "groupPolicy": "open",
           "requireMention": false,
           "replyBehavior": "reply-to",
           "skills": ["memoryweave-npc"],
