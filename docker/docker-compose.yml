@@ -90,8 +90,9 @@ services:
     environment:
       MEMORYWEAVE_API_KEY: ${MEMORYWEAVE_API_KEY:?MEMORYWEAVE_API_KEY is required}
       MEMORYWEAVE_BASE_URL: http://server:3000
-      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:?DISCORD_BOT_TOKEN is required}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:-}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
     depends_on:
       server:
         condition: service_started
