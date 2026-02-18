@@ -19,61 +19,9 @@
 
   // === Channels ===
   "channels": {
-    "discord": {
-      "enabled": true,
-      // Set DISCORD_BOT_TOKEN in env or uncomment:
-      // "token": "${DISCORD_BOT_TOKEN}",
-
-      "groupPolicy": "allowlist",
-
-      "dm": {
-        "enabled": true,
-        "policy": "allowlist",
-        "allowFrom": []  // Add Discord user IDs of authorized devs
-      },
-
-      "guilds": {
-        // === Template Guild Configuration ===
-        // Copy this block, replace YOUR_GUILD_ID with your Discord server ID,
-        // and uncomment to activate.
-        //
-        // "YOUR_GUILD_ID": {
-        //   "slug": "my-game-server",
-        //   "requireMention": false,
-        //
-        //   "channels": {
-        //     // --- Admin channel ---
-        //     // Create a private channel for managing NPCs.
-        //     // Only authorized devs should have access to this channel.
-        //     "mw-admin": {
-        //       "allow": true,
-        //       "requireMention": false,
-        //       "skills": ["memoryweave-admin"],
-        //       "systemPrompt": "You are the MemoryWeave admin assistant. Help the game developer manage their NPCs, memories, routines, goals, relationships, and channel bindings."
-        //     },
-        //
-        //     // --- NPC channel example ---
-        //     // Create one channel per NPC character.
-        //     // Bind NPCs to channels via: mw bind-channel <npc_id> discord <channel_id>
-        //     // The NPC skill resolves the binding automatically at runtime.
-        //     "tavern": {
-        //       "allow": true,
-        //       "requireMention": false,
-        //       "skills": ["memoryweave-npc"],
-        //       "systemPrompt": "You are a transparent message relay. For every user message, use the memoryweave-npc skill to resolve the bound NPC and return ONLY the NPC's response. Do not add commentary."
-        //     },
-        //
-        //     // --- Add more NPC channels as needed ---
-        //     // "blacksmith": {
-        //     //   "allow": true,
-        //     //   "requireMention": false,
-        //     //   "skills": ["memoryweave-npc"],
-        //     //   "systemPrompt": "You are a transparent message relay. For every user message, use the memoryweave-npc skill to resolve the bound NPC and return ONLY the NPC's response. Do not add commentary."
-        //     // }
-        //   }
-        // }
-      }
-    },
+    // Discord disabled — no bot token configured
+    // Uncomment and configure when ready to use Discord
+    // "discord": { "enabled": true, ... },
 
     "telegram": {
       "enabled": true,
