@@ -12,15 +12,5 @@
         "mode": "safeguard"
       }
     }
-  },
-  "plugins": {
-    "entries": {
-      "telegram": {
-        "enabled": true
-      },
-      "discord": {
-        "enabled": false
-      }
-    }
   }
 }

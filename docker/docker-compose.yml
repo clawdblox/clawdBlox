@@ -87,7 +87,7 @@ services:
     user: "0:0"
     volumes:
       - ../openclaw/openclaw.jsonc:/root/.openclaw/openclaw.jsonc:ro
-      - ../openclaw/openclaw.json:/root/.openclaw/openclaw.json
+      - ../openclaw/openclaw.json:/root/.openclaw/openclaw.json:ro
       - ../openclaw/workspace:/root/.openclaw/workspace:ro
     environment:
       MEMORYWEAVE_API_KEY: ${MEMORYWEAVE_API_KEY:?MEMORYWEAVE_API_KEY is required}
