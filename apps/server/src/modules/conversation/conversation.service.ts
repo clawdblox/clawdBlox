@@ -3,7 +3,7 @@ import { npcRepository } from '../npc/npc.repository';
 import { memoryService } from '../memory/memory.service';
 import { lifeService } from '../life/life.service';
 import { AIProviderFactory } from '../../ai/provider.factory';
-import { buildSystemPrompt, buildMessages } from './prompt-builder';
+import { buildSystemPrompt, buildMessages, detectLanguage } from './prompt-builder';
 import { detectInjection } from './injection-detector';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import type { ChatMessage, ChatResponse, NPC, Project } from '@clawdblox/memoryweave-shared';
@@ -102,6 +102,19 @@ export const conversationService = {
     for await (const token of provider.chat(messages, { temperature: 0.7, max_tokens: 512 })) {
       if (aiTimeout.aborted) throw new Error('AI response timeout');
       fullResponse += token;
+    }
+
+    const lang = detectLanguage(message);
+    if (lang) {
+      let translated = '';
+      const translateMessages: ChatMessage[] = [
+        { role: 'system', content: `Translate the following text to ${lang}. Keep the same tone, emotion, and roleplay formatting (asterisks for actions). Reply with ONLY the translated text, nothing else.` },
+        { role: 'user', content: fullResponse },
+      ];
+      for await (const token of provider.chat(translateMessages, { model: 'llama-3.1-8b-instant', temperature: 0.2, max_tokens: 512 })) {
+        translated += token;
+      }
+      fullResponse = translated;
     }
 
     await finalizeChatResponse(npcId, project, playerId, conversationId, message, fullResponse, relationship);
