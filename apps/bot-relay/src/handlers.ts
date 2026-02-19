@@ -44,23 +44,36 @@ export function createHandlers(api: ApiClient, npcCache: TtlCache<Npc[]>) {
   }
 
   async function handleNpcs(ctx: Context): Promise<void> {
+    let npcs: Npc[];
     try {
-      const npcs = await getNpcs(ctx);
-      if (npcs.length === 0) {
-        await ctx.reply('No NPCs are bound to this channel.');
-        return;
-      }
-      const blocks = npcs.map((n) => {
-        const cmd = n.name.split(' ')[0].toLowerCase();
-        let entry = `/<b>${escapeHtml(cmd)}</b> — ${escapeHtml(n.name)}`;
-        const snippet = truncateBackstory(n.backstory);
-        if (snippet) entry += `\n${escapeHtml(snippet)}`;
-        return entry;
-      });
-      await ctx.reply(`<b>Available NPCs:</b>\n\n${blocks.join('\n\n')}`, { parse_mode: 'HTML' });
+      npcs = await getNpcs(ctx);
     } catch (err) {
       logger.error('handleNpcs failed', { error: String(err) });
       await ctx.reply('Failed to fetch NPC list. Try again later.');
+      return;
+    }
+    if (npcs.length === 0) {
+      await ctx.reply('No NPCs are bound to this channel.');
+      return;
+    }
+    const blocks = npcs.map((n) => {
+      const cmd = n.name.split(' ')[0].toLowerCase();
+      let entry = `/<b>${escapeHtml(cmd)}</b> — ${escapeHtml(n.name)}`;
+      const snippet = truncateBackstory(n.backstory);
+      if (snippet) entry += `\n${escapeHtml(snippet)}`;
+      return entry;
+    });
+    try {
+      await ctx.reply(`<b>Available NPCs:</b>\n\n${blocks.join('\n\n')}`, { parse_mode: 'HTML' });
+    } catch {
+      const plain = npcs.map((n) => {
+        const cmd = n.name.split(' ')[0].toLowerCase();
+        let line = `/${cmd} — ${n.name}`;
+        const snippet = truncateBackstory(n.backstory);
+        if (snippet) line += `\n${snippet}`;
+        return line;
+      });
+      await ctx.reply(`Available NPCs:\n\n${plain.join('\n\n')}`);
     }
   }
 
