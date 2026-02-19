@@ -108,6 +108,7 @@ ${npc.mood}`,
 
   sections.push(`
 ## IMPORTANT RULES
+- Always respond in the same language the player is speaking
 - Stay in character at all times
 - Respond naturally based on your personality and speaking style
 - Reference your memories when relevant
