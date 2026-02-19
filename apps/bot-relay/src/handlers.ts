@@ -10,6 +10,7 @@ interface Npc {
 }
 
 const UTILITY_COMMANDS = new Set(['npcs', 'link', 'unlink', 'whoami', 'start', 'help']);
+const TG_MAX_LENGTH = 4096;
 
 function escapeHtml(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -63,8 +64,28 @@ export function createHandlers(api: ApiClient, npcCache: TtlCache<Npc[]>) {
       if (snippet) entry += `\n${escapeHtml(snippet)}`;
       return entry;
     });
+    const header = '<b>Available NPCs:</b>\n\n';
+    const separator = '\n\n';
+    const chunks: string[][] = [];
+    let current: string[] = [];
+    let currentLen = header.length;
+    for (const block of blocks) {
+      const added = current.length === 0 ? block.length : separator.length + block.length;
+      if (currentLen + added > TG_MAX_LENGTH && current.length > 0) {
+        chunks.push(current);
+        current = [block];
+        currentLen = header.length + block.length;
+      } else {
+        current.push(block);
+        currentLen += added;
+      }
+    }
+    if (current.length > 0) chunks.push(current);
     try {
-      await ctx.reply(`<b>Available NPCs:</b>\n\n${blocks.join('\n\n')}`, { parse_mode: 'HTML' });
+      for (let i = 0; i < chunks.length; i++) {
+        const prefix = i === 0 ? header : '';
+        await ctx.reply(`${prefix}${chunks[i].join(separator)}`, { parse_mode: 'HTML' });
+      }
     } catch {
       const plain = npcs.map((n) => {
         const cmd = n.name.split(' ')[0].toLowerCase();
@@ -73,7 +94,10 @@ export function createHandlers(api: ApiClient, npcCache: TtlCache<Npc[]>) {
         if (snippet) line += `\n${snippet}`;
         return line;
       });
-      await ctx.reply(`Available NPCs:\n\n${plain.join('\n\n')}`);
+      const text = `Available NPCs:\n\n${plain.join('\n\n')}`;
+      for (let i = 0; i < text.length; i += TG_MAX_LENGTH) {
+        await ctx.reply(text.slice(i, i + TG_MAX_LENGTH));
+      }
     }
   }
 
