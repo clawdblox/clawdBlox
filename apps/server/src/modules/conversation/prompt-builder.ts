@@ -58,22 +58,22 @@ const LANG_PATTERNS: Array<{ lang: string; chars: RegExp; words: RegExp }> = [
   {
     lang: 'French',
     chars: /[éèêëàâùûüôçîïœæ]/i,
-    words: /\b(je|tu|il|elle|nous|vous|ils|elles|le|la|les|un|une|des|du|de|et|est|en|dans|pour|que|qui|pas|avec|sur|ce|cette|mon|ton|son|ma|ta|sa|mes|tes|ses|mais|donc|car|ne|se|au|aux|très|bien|fait|quoi|salut|bonjour|merci|oui|non|comment|pourquoi|quand|moi|toi|lui)\b/i,
+    words: /\b(je|tu|il|elle|nous|vous|ils|elles|le|la|les|un|une|des|du|de|et|est|en|dans|pour|que|qui|pas|avec|sur|ce|cette|mon|ton|son|ma|ta|sa|mes|tes|ses|mais|donc|car|ne|se|au|aux|très|bien|fait|quoi|salut|bonjour|merci|oui|non|comment|pourquoi|quand|moi|toi|lui)\b/gi,
   },
   {
     lang: 'Spanish',
     chars: /[ñ¿¡áéíóúü]/i,
-    words: /\b(yo|tú|él|ella|nosotros|ellos|hola|gracias|por favor|qué|cómo|dónde|pero|también|muy|bien|está|tiene|hace|puede)\b/i,
+    words: /\b(yo|tú|él|ella|nosotros|ellos|hola|gracias|por favor|qué|cómo|dónde|pero|también|muy|bien|está|tiene|hace|puede)\b/gi,
   },
   {
     lang: 'German',
     chars: /[äöüß]/i,
-    words: /\b(ich|du|er|sie|wir|ihr|und|ist|das|ein|eine|nicht|mit|auf|für|den|dem|von|wie|was|hallo|danke|bitte|aber|auch|sehr|gut)\b/i,
+    words: /\b(ich|du|er|sie|wir|ihr|und|ist|das|ein|eine|nicht|mit|auf|für|den|dem|von|wie|was|hallo|danke|bitte|aber|auch|sehr|gut)\b/gi,
   },
   {
     lang: 'Portuguese',
     chars: /[ãõç]/i,
-    words: /\b(eu|você|ele|ela|nós|eles|olá|obrigado|por favor|não|sim|como|muito|bem|está|tem|pode|mas|também)\b/i,
+    words: /\b(eu|você|ele|ela|nós|eles|olá|obrigado|por favor|não|sim|como|muito|bem|está|tem|pode|mas|também)\b/gi,
   },
 ];
 
@@ -81,7 +81,7 @@ export function detectLanguage(text: string): string | null {
   for (const { lang, chars, words } of LANG_PATTERNS) {
     if (chars.test(text)) return lang;
     const wordMatches = text.match(words);
-    if (wordMatches && wordMatches.length >= 1) return lang;
+    if (wordMatches && wordMatches.length >= 2) return lang;
   }
   return null;
 }

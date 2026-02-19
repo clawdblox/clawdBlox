@@ -3,8 +3,9 @@ import { npcRepository } from '../npc/npc.repository';
 import { memoryService } from '../memory/memory.service';
 import { lifeService } from '../life/life.service';
 import { AIProviderFactory } from '../../ai/provider.factory';
-import { buildSystemPrompt, buildMessages } from './prompt-builder';
+import { buildSystemPrompt, buildMessages, detectLanguage } from './prompt-builder';
 import { detectInjection } from './injection-detector';
+import { translateResponse } from './translator';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import type { ChatMessage, ChatResponse, NPC, Project } from '@clawdblox/memoryweave-shared';
 
@@ -104,19 +105,16 @@ export const conversationService = {
       fullResponse += token;
     }
 
-    let translated = '';
-    const translateMessages: ChatMessage[] = [
-      { role: 'system', content: `You are a translation engine. Detect the language of the PLAYER MESSAGE below. Then translate the NPC RESPONSE into that same language. Keep the same tone, emotion, and roleplay formatting (asterisks for actions). If the NPC response is already in the correct language, return it exactly as-is. Reply with ONLY the final text, nothing else.` },
-      { role: 'user', content: `PLAYER MESSAGE:\n${message}\n\nNPC RESPONSE:\n${fullResponse}` },
-    ];
-    for await (const token of provider.chat(translateMessages, { model: 'llama-3.1-8b-instant', temperature: 0.2, max_tokens: 512 })) {
-      translated += token;
-    }
-    fullResponse = translated;
-
+    // Save original EN response to history before any translation
     await finalizeChatResponse(npcId, project, playerId, conversationId, message, fullResponse, relationship);
 
-    return { conversation_id: conversationId, message: fullResponse, npc_mood: npc.mood };
+    // Translate only if player wrote in a non-English language
+    const detectedLang = detectLanguage(message);
+    const responseMessage = detectedLang
+      ? await translateResponse(provider, fullResponse, detectedLang)
+      : fullResponse;
+
+    return { conversation_id: conversationId, message: responseMessage, npc_mood: npc.mood };
   },
 
   async *chatStream(
