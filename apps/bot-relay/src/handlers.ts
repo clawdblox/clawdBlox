@@ -11,6 +11,10 @@ interface Npc {
 
 const UTILITY_COMMANDS = new Set(['npcs', 'link', 'unlink', 'whoami', 'start', 'help']);
 
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 export function createHandlers(api: ApiClient, npcCache: TtlCache<Npc[]>) {
   function userId(ctx: Context): string {
     return String(ctx.from!.id);
@@ -48,9 +52,9 @@ export function createHandlers(api: ApiClient, npcCache: TtlCache<Npc[]>) {
       }
       const blocks = npcs.map((n) => {
         const cmd = n.name.split(' ')[0].toLowerCase();
-        let entry = `/<b>${cmd}</b> — ${n.name}`;
+        let entry = `/<b>${escapeHtml(cmd)}</b> — ${escapeHtml(n.name)}`;
         const snippet = truncateBackstory(n.backstory);
-        if (snippet) entry += `\n${snippet}`;
+        if (snippet) entry += `\n${escapeHtml(snippet)}`;
         return entry;
       });
       await ctx.reply(`<b>Available NPCs:</b>\n\n${blocks.join('\n\n')}`, { parse_mode: 'HTML' });
