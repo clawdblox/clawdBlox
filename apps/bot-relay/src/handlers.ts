@@ -87,16 +87,32 @@ export function createHandlers(api: ApiClient, npcCache: TtlCache<Npc[]>) {
         await ctx.reply(`${prefix}${chunks[i].join(separator)}`, { parse_mode: 'HTML' });
       }
     } catch {
-      const plain = npcs.map((n) => {
+      const plainHeader = 'Available NPCs:\n\n';
+      const plainBlocks = npcs.map((n) => {
         const cmd = n.name.split(' ')[0].toLowerCase();
         let line = `/${cmd} — ${n.name}`;
         const snippet = truncateBackstory(n.backstory);
         if (snippet) line += `\n${snippet}`;
         return line;
       });
-      const text = `Available NPCs:\n\n${plain.join('\n\n')}`;
-      for (let i = 0; i < text.length; i += TG_MAX_LENGTH) {
-        await ctx.reply(text.slice(i, i + TG_MAX_LENGTH));
+      const plainChunks: string[][] = [];
+      let cur: string[] = [];
+      let curLen = plainHeader.length;
+      for (const block of plainBlocks) {
+        const added = cur.length === 0 ? block.length : separator.length + block.length;
+        if (curLen + added > TG_MAX_LENGTH && cur.length > 0) {
+          plainChunks.push(cur);
+          cur = [block];
+          curLen = plainHeader.length + block.length;
+        } else {
+          cur.push(block);
+          curLen += added;
+        }
+      }
+      if (cur.length > 0) plainChunks.push(cur);
+      for (let i = 0; i < plainChunks.length; i++) {
+        const prefix = i === 0 ? plainHeader : '';
+        await ctx.reply(`${prefix}${plainChunks[i].join(separator)}`);
       }
     }
   }

@@ -16,7 +16,7 @@ Users type `/npcname message` in Telegram. You run a shell command to send the m
 
 If the message is one of these, run the command and stop:
 
-- `/npcs` → run: `exec mw list-channel-npcs telegram <channel_id>` and format as a list
+- `/npcs` → run: `exec mw list-channel-npcs telegram <channel_id>` and format as a list. If the list has more than 10 NPCs, split into multiple messages (max 10 NPCs per message) to stay under the platform character limit. Send each chunk as a separate reply. First chunk gets the "Available NPCs:" header, subsequent chunks get "Available NPCs (continued):"
 - `/link` → run: `exec mw request-link-code telegram <sender_user_id>`
 - `/unlink` → run: `exec mw unlink-player telegram <sender_user_id>`
 - `/whoami` → run: `exec mw resolve-player telegram <sender_user_id>`
