@@ -91,8 +91,23 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY is required}
       MEMORYWEAVE_API_KEY: ${MEMORYWEAVE_API_KEY:?MEMORYWEAVE_API_KEY is required}
       MEMORYWEAVE_BASE_URL: http://server:3000
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+    depends_on:
+      server:
+        condition: service_started
+    restart: unless-stopped
+
+  bot-relay:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.bot-relay
+    container_name: memoryweave-bot-relay
+    environment:
+      NODE_ENV: production
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:?TELEGRAM_BOT_TOKEN is required}
+      MEMORYWEAVE_API_KEY: ${MEMORYWEAVE_API_KEY}
+      MEMORYWEAVE_BASE_URL: http://server:3000
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     depends_on:
       server:
         condition: service_started

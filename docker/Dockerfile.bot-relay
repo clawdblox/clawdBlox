@@ -1,0 +1,36 @@
+# ===== Stage 1: Build =====
+FROM node:20-alpine AS builder
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json tsconfig.base.json ./
+COPY apps/bot-relay/package.json apps/bot-relay/tsconfig.json ./apps/bot-relay/
+
+RUN pnpm install --frozen-lockfile
+
+COPY apps/bot-relay/ ./apps/bot-relay/
+
+RUN pnpm --filter @clawdblox/bot-relay build
+
+# ===== Stage 2: Production =====
+FROM node:20-alpine AS runner
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN apk add --no-cache tini
+
+WORKDIR /app
+
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY apps/bot-relay/package.json ./apps/bot-relay/
+
+RUN pnpm install --frozen-lockfile --prod
+
+COPY --from=builder /app/apps/bot-relay/dist ./apps/bot-relay/dist
+
+ENV NODE_ENV=production
+USER node
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["node", "apps/bot-relay/dist/index.js"]

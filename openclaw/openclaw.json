@@ -22,13 +22,13 @@
   "plugins": {
     "entries": {
       "telegram": {
-        "enabled": true
+        "enabled": false
       }
     }
   },
   "channels": {
     "telegram": {
-      "enabled": true,
+      "enabled": false,
       "dmPolicy": "open",
       "allowFrom": ["*"],
       "groups": {
