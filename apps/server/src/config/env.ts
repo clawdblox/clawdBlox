@@ -26,7 +26,6 @@ const envSchema = z.object({
   // Groq (chat)
   GROQ_API_KEY: z.string().optional(),
   GROQ_CHAT_MODEL: z.string().default('llama-3.1-70b-versatile'),
-  GROQ_TRANSLATE_MODEL: z.string().default('gemma2-9b-it'),
 
   // OpenAI (embeddings)
   OPENAI_API_KEY: z.string().optional(),

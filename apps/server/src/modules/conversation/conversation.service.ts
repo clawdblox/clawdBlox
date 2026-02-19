@@ -3,9 +3,8 @@ import { npcRepository } from '../npc/npc.repository';
 import { memoryService } from '../memory/memory.service';
 import { lifeService } from '../life/life.service';
 import { AIProviderFactory } from '../../ai/provider.factory';
-import { buildSystemPrompt, buildMessages, detectLanguage } from './prompt-builder';
+import { buildSystemPrompt, buildMessages } from './prompt-builder';
 import { detectInjection } from './injection-detector';
-import { translateResponse } from './translator';
 import { NotFoundError, ValidationError } from '../../utils/errors';
 import type { ChatMessage, ChatResponse, NPC, Project } from '@clawdblox/memoryweave-shared';
 
@@ -105,16 +104,9 @@ export const conversationService = {
       fullResponse += token;
     }
 
-    // Save original EN response to history before any translation
     await finalizeChatResponse(npcId, project, playerId, conversationId, message, fullResponse, relationship);
 
-    // Translate only if player wrote in a non-English language
-    const detectedLang = detectLanguage(message);
-    const responseMessage = detectedLang
-      ? await translateResponse(provider, fullResponse, detectedLang)
-      : fullResponse;
-
-    return { conversation_id: conversationId, message: responseMessage, npc_mood: npc.mood };
+    return { conversation_id: conversationId, message: fullResponse, npc_mood: npc.mood };
   },
 
   async *chatStream(
