@@ -9,7 +9,7 @@ const config = loadConfig();
 setLogLevel(config.LOG_LEVEL);
 
 const api = new ApiClient(config.MEMORYWEAVE_BASE_URL, config.MEMORYWEAVE_API_KEY);
-const npcCache = new TtlCache<{ npc_id: string; name: string }[]>(config.NPC_CACHE_TTL_MS);
+const npcCache = new TtlCache<{ npc_id: string; name: string; backstory: string }[]>(config.NPC_CACHE_TTL_MS);
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN);
 
 const { handleNpcs, handleLink, handleUnlink, handleWhoami, handleMessage } =

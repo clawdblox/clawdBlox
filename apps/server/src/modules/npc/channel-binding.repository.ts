@@ -11,6 +11,7 @@ export interface ChannelBinding {
 
 export interface ChannelBindingWithNpc extends ChannelBinding {
   npc_name: string;
+  npc_backstory: string;
 }
 
 export const channelBindingRepository = {
@@ -59,7 +60,7 @@ export const channelBindingRepository = {
 
   async findAllByChannel(projectId: string, platform: string, platformChannelId: string): Promise<ChannelBindingWithNpc[]> {
     const result = await pool.query(
-      `SELECT cb.*, n.name AS npc_name
+      `SELECT cb.*, n.name AS npc_name, n.backstory AS npc_backstory
        FROM channel_bindings cb
        JOIN npcs n ON n.id = cb.npc_id
        WHERE cb.project_id = $1 AND cb.platform = $2 AND cb.platform_channel_id = $3

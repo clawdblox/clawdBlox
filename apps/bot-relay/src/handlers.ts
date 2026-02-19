@@ -6,6 +6,7 @@ import { logger } from './logger.js';
 interface Npc {
   npc_id: string;
   name: string;
+  backstory: string;
 }
 
 const UTILITY_COMMANDS = new Set(['npcs', 'link', 'unlink', 'whoami', 'start', 'help']);
@@ -28,6 +29,16 @@ export function createHandlers(api: ApiClient, npcCache: TtlCache<Npc[]>) {
     return npcs;
   }
 
+  function truncateBackstory(backstory: string): string {
+    if (!backstory) return '';
+    const sentences = backstory.split('.');
+    const snippet = sentences.slice(0, 2).join('.').trim();
+    if (!snippet) return '';
+    const result = snippet.endsWith('.') ? snippet : snippet + '.';
+    if (result.length > 200) return result.slice(0, 197) + '…';
+    return result;
+  }
+
   async function handleNpcs(ctx: Context): Promise<void> {
     try {
       const npcs = await getNpcs(ctx);
@@ -35,8 +46,14 @@ export function createHandlers(api: ApiClient, npcCache: TtlCache<Npc[]>) {
         await ctx.reply('No NPCs are bound to this channel.');
         return;
       }
-      const lines = npcs.map((n) => `- /${n.name.split(' ')[0].toLowerCase()}`);
-      await ctx.reply(`Available NPCs:\n${lines.join('\n')}`);
+      const blocks = npcs.map((n) => {
+        const cmd = n.name.split(' ')[0].toLowerCase();
+        let entry = `/<b>${cmd}</b> — ${n.name}`;
+        const snippet = truncateBackstory(n.backstory);
+        if (snippet) entry += `\n${snippet}`;
+        return entry;
+      });
+      await ctx.reply(`<b>Available NPCs:</b>\n\n${blocks.join('\n\n')}`, { parse_mode: 'HTML' });
     } catch (err) {
       logger.error('handleNpcs failed', { error: String(err) });
       await ctx.reply('Failed to fetch NPC list. Try again later.');

@@ -50,7 +50,7 @@ channelBindingController.get('/channels/npcs', async (req, res, next) => {
     if (!query.success) throw new ValidationError('Invalid query', query.error.format());
 
     const npcs = await channelBindingRepository.findAllByChannel(req.projectId!, query.data.platform, query.data.platform_channel_id);
-    res.json({ npcs: npcs.map(b => ({ npc_id: b.npc_id, name: b.npc_name, platform: b.platform, platform_channel_id: b.platform_channel_id })) });
+    res.json({ npcs: npcs.map(b => ({ npc_id: b.npc_id, name: b.npc_name, backstory: b.npc_backstory ?? '', platform: b.platform, platform_channel_id: b.platform_channel_id })) });
   } catch (err) { next(err); }
 });
 

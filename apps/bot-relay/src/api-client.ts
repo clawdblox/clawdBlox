@@ -6,6 +6,7 @@ const PLATFORM = 'telegram';
 interface Npc {
   npc_id: string;
   name: string;
+  backstory: string;
   platform: string;
   platform_channel_id: string;
 }
